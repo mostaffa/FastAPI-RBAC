@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+.env
+.idea/
+.vscode/
+client/node_modules/
+dist/
+build/
+*.log
+backend/app/static/

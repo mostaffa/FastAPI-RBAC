@@ -1,0 +1,40 @@
+image: node:20
+
+stages:
+  - lint
+  - test
+
+# Shared defaults for jobs
+default:
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - node_modules/
+    policy: pull-push
+  before_script:
+    - npm ci
+
+variables:
+  NPM_CONFIG_FUND: "false"
+  NPM_CONFIG_AUDIT: "false"
+
+lint:
+  stage: lint
+  script:
+    # Fail on any ESLint warning and run TS type-check
+    - npm run lint -- --max-warnings=0
+    - npm run type-check
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+unit_tests:
+  stage: test
+  script:
+    - npm run test
+  needs: ["lint"]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH

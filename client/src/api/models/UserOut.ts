@@ -1,0 +1,8 @@
+/* generated using openapi-typescript-codegen -- do not edit */
+/* istanbul ignore file */
+/* eslint-disable */
+import type { UserRead } from "./UserRead"
+export type UserOut = {
+  user: UserRead
+  permissions?: Array<string>
+}
