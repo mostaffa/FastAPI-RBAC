@@ -15,11 +15,11 @@ import InputLabel from "@mui/material/InputLabel"
 import Checkbox from "@mui/material/Checkbox"
 import Loader from "../../../../components/ui/loader/Loader"
 import useNotifications from "../../../../hooks/useNotifications/useNotifications"
-import useSocket from "../../../../hooks/useSocket/useSocket"
+// import useSocket from "../../../../hooks/useSocket/useSocket"
 
 const RolePermission: React.FC<{ roleId: number }> = ({ roleId }) => {
   const dispatch = useAppDispatch()
-  const { status } = useSocket()
+  // const { status } = useSocket()
   const notifications = useNotifications()
   const [disabled, setDisabled] = useState(false)
   const { data: rolePermissions, isLoading: isRolePermissionsLoading } =
@@ -96,9 +96,9 @@ const RolePermission: React.FC<{ roleId: number }> = ({ roleId }) => {
             },
           )
           // if socket is connected, optimistically update UI
-          if (status !== "connected") {
-            updateView(roleId, permissionId, "role_permission_added")
-          }
+          // if (status !== "connected") {
+          updateView(roleId, permissionId, "role_permission_added")
+          // }
           notifications.show("Permission added to role", {
             severity: "success",
             autoHideDuration: 3000,
@@ -110,9 +110,9 @@ const RolePermission: React.FC<{ roleId: number }> = ({ roleId }) => {
               permissionId: permissionId, // Example permission ID to remove, replace with actual logic
             },
           )
-          if (status !== "connected") {
-            updateView(roleId, permissionId, "role_permission_removed")
-          }
+          // if (status !== "connected") {
+          updateView(roleId, permissionId, "role_permission_removed")
+          // }
           notifications.show("Permission removed from role", {
             severity: "success",
             autoHideDuration: 3000,
@@ -128,48 +128,8 @@ const RolePermission: React.FC<{ roleId: number }> = ({ roleId }) => {
         setDisabled(false)
       }
     },
-    [roleId, notifications, updateView, status],
+    [roleId, notifications, updateView],
   )
-
-  // useEffect(() => {
-  //   if (
-  //     message?.type === "role_permission_added" &&
-  //     typeof message.payload === "object"
-  //   ) {
-  //     if (
-  //       "role" in message.payload &&
-  //       "permission" in message.payload &&
-  //       typeof message.payload.role.id === "number" &&
-  //       typeof message.payload.permission.id === "number"
-  //     ) {
-  //       if (roleId === message.payload.role.id) {
-  //         updateView(
-  //           message.payload.role.id,
-  //           message.payload.permission.id,
-  //           "role_permission_added",
-  //         )
-  //       }
-  //     }
-  //   } else if (
-  //     message?.type === "role_permission_removed" &&
-  //     typeof message.payload === "object"
-  //   ) {
-  //     if (
-  //       "role" in message.payload &&
-  //       "permission" in message.payload &&
-  //       typeof message.payload.role.id === "number" &&
-  //       typeof message.payload.permission.id === "number"
-  //     ) {
-  //       if (roleId === message.payload.role.id) {
-  //         updateView(
-  //           message.payload.role.id,
-  //           message.payload.permission.id,
-  //           "role_permission_removed",
-  //         )
-  //       }
-  //     }
-  //   }
-  // }, [message, updateView, roleId])
 
   useEffect(() => {
     if (allPermissions) {

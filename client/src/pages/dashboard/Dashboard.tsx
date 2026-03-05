@@ -72,7 +72,7 @@ export default function DashboardLayout() {
         //     height="32"
         //   />
         // }
-        title="RF24"
+        title="WP100"
         menuOpen={isNavigationExpanded}
         onToggleMenu={handleToggleHeaderMenu}
       />

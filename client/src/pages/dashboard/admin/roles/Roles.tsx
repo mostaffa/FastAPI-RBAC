@@ -345,7 +345,7 @@ const Roles = () => {
 
   return (
     <Container maxWidth="xl">
-      <Grid container spacing={2} sx={{ mt: 2 }}>
+      <Grid container spacing={1} sx={{ mt: 1 }}>
         <Grid
           size={{ xs: 12, sm: 12, md: 8, lg: 8, xl: 8 }}
           component={Paper}
@@ -380,7 +380,7 @@ const Roles = () => {
           </Grid>
         )}
       </Grid>
-      <Grid container spacing={2} sx={{ mt: 2 }}>
+      <Grid container spacing={1} sx={{ mt: 1 }}>
         {roles.map(role => (
           <Grid
             size={{ xs: 12, sm: 6, md: 4 }}

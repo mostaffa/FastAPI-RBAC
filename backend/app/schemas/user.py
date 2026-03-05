@@ -30,3 +30,4 @@ class UserRead(BaseModel):
 
     class Config:
         from_attributes = True
+

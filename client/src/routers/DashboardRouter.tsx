@@ -18,6 +18,7 @@ const Users = React.lazy(() => import("../pages/dashboard/admin/users/Users"))
 const UserForm = React.lazy(
   () => import("../pages/dashboard/admin/users/UserForm"),
 )
+const Sensors = React.lazy(() => import("../pages/dashboard/sensor/Sensor"))
 
 export default function DashboardRouter() {
   const user = useAppSelector(selectUser)
@@ -37,6 +38,14 @@ export default function DashboardRouter() {
         element={
           <React.Suspense fallback={<Loader />}>
             <Layout />
+          </React.Suspense>
+        }
+      />
+      <Route
+        path="/sensors"
+        element={
+          <React.Suspense fallback={<Loader />}>
+            <Sensors />
           </React.Suspense>
         }
       />

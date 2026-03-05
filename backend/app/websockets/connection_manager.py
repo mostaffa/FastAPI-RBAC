@@ -6,6 +6,10 @@ from fastapi import WebSocket
 from http.cookies import SimpleCookie
 from app.db.session import get_session
 from app.core.security import get_current_user_from_token, extract_bearer_from_cookie_value
+from sqlmodel import Session, select
+from app.models.user import User
+from app.models.permission import Permission, RolePermission
+from app.services.sensor import sensor_service
 
 sio = socketio.AsyncServer(
     async_mode="asgi",
@@ -77,6 +81,33 @@ async def connect(sid: str, environ: dict[str, Any]):
     print(f"\u001b[32mSocket Connected: {sid} (User ID: {user_id})\u001b[0m")
     return True
 
+@socket_event
+async def sensor_list(sid: str, message: dict[str, Any]):
+    print(f"\u001b[32mSensor Message Request Incomming: {sid}\u001b[0m")
+    print(message)
+    user_id = _sid_user[sid]
+    db = next(get_session())
+    user = db.exec(
+        select(User).where(User.id == user_id)
+    ).first()
+    print(user)
+    sensor_read_perm = db.exec(
+        select(Permission).join(RolePermission).where(RolePermission.role_id == user.role_id).where(Permission.name == "sensors:read")
+    ).all()
+    if sensor_read_perm:
+        print("User Has Sensor Read Permission")
+        data = await sensor_service.get_sensor_list()
+        print(data)
+        await emit(event="msg", data={
+            "type": "sensors",
+            "payload": data
+        })
+    else:
+        print("User Dosent Has Sensor Read Permission")
+        await emit(event="error", data={
+            "code": 403,
+            "message": "You dont have permission to read Sensors"
+        })
 
 @socket_event
 async def disconnect(sid: str):

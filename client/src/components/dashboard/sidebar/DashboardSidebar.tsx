@@ -1,6 +1,7 @@
 import * as React from "react"
 import { useTheme } from "@mui/material/styles"
 import useMediaQuery from "@mui/material/useMediaQuery"
+import { selectSensors } from "../../../features/sensors/sensorsSlice.ts"
 import Box from "@mui/material/Box"
 import Drawer from "@mui/material/Drawer"
 import List from "@mui/material/List"
@@ -17,6 +18,7 @@ import DashboardSidebarDividerItem from "./deviderItem/DashboardSidebarDividerIt
 import PersonIcon from "@mui/icons-material/Person"
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline"
 import GroupsIcon from "@mui/icons-material/Groups"
+import SensorsIcon from "@mui/icons-material/Sensors"
 import {
   getDrawerSxTransitionMixin,
   getDrawerWidthTransitionMixin,
@@ -61,6 +63,8 @@ export default function DashboardSidebar({
 
   const [isFullyExpanded, setIsFullyExpanded] = React.useState(expanded)
   const [isFullyCollapsed, setIsFullyCollapsed] = React.useState(!expanded)
+
+  const sensors = useAppSelector(selectSensors)
 
   React.useEffect(() => {
     if (expanded) {
@@ -232,18 +236,60 @@ export default function DashboardSidebar({
                     </List>
                   }
                 />
-                {/* 
-                <DashboardSidebarPageItem
-                  id="integrations"
-                  title="Integrations"
-                  icon={<LayersIcon />}
-                  href="/integrations"
-                  selected={!!matchPath("/integrations", pathname)}
-                /> */}
               </>
             )}
 
             <DashboardSidebarDividerItem />
+            {permissions.includes("sensors:read") && (
+              <>
+                {sensors && (
+                  <>
+                  <DashboardSidebarHeaderItem>Sensors</DashboardSidebarHeaderItem>
+                  <DashboardSidebarPageItem
+                    id="sensors"
+                    title={"Sensors (" + String(sensors.length) + ")"}
+                    icon={<SensorsIcon />}
+                    selected={!!matchPath("/sensors/*", pathname)}
+                    defaultExpanded={!!matchPath("/sensors/", pathname)}
+                    expanded={expandedItemIds.includes("sensors")}
+                    nestedNavigation={
+                      <List
+                        dense
+                        sx={{
+                          padding: 0,
+                          my: 1,
+                          pl: mini ? 0 : 1,
+                          minWidth: 240,
+                        }}
+                      >
+                        {sensors.map((sensor, idx) => (
+                          <DashboardSidebarPageItem
+                            key={sensor + String(idx)}
+                            id={sensor}
+                            title={sensor}
+                            icon={<SensorsIcon />}
+                            href={"/sensors/" + sensor}
+                            selected={
+                              !!matchPath("/sensors/" + sensor, pathname)
+                            }
+                          />
+                        ))}
+                      </List>
+                    }
+                  />
+                  </>
+                )}
+
+                {/* <DashboardSidebarPageItem
+                id="sensors"
+                title="Sensors"
+                icon={<SensorsIcon />}
+                href="/sensors"
+                selected={!!matchPath("/sensors", pathname)}
+              /> */}
+                <DashboardSidebarDividerItem />
+              </>
+            )}
             <DashboardSidebarPageItem
               id="logout"
               title="Logout"
@@ -278,6 +324,7 @@ export default function DashboardSidebar({
       dispatch,
       user,
       permissions,
+      sensors,
     ],
   )
 

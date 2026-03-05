@@ -14,12 +14,12 @@ export default defineConfig({
     allowedHosts: ["nest.mostafaothman.com"],
     proxy: {
       "/api": {
-        target: "https://dev.mostafaothman.com",
+        target: "http://localhost:4000",
         changeOrigin: true,
         secure: true,
       },
       "/ws": {
-        target: "wss://dev.mostafaothman.com",
+        target: "ws://localhost:4000",
         changeOrigin: true,
         secure: true,
         ws: true,

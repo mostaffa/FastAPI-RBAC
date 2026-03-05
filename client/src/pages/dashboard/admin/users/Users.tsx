@@ -95,7 +95,7 @@ const Users = () => {
 
   return (
     <Container maxWidth="xl">
-      <Grid container spacing={2} sx={{ mt: 2 }}>
+      <Grid container spacing={1} sx={{ mt: 1 }}>
         <Grid
           size={{ xs: 12, sm: 12, md: 8, lg: 8, xl: 8 }}
           component={Paper}
@@ -134,7 +134,7 @@ const Users = () => {
           </Grid>
         )}
       </Grid>
-      <Grid container spacing={2} sx={{ mt: 2 }}>
+      <Grid container spacing={1} sx={{ mt: 1 }}>
         {users?.map(u => (
           <Grid size={{ xs: 12, sm: 6, md: 4 }} key={u.id} position="relative">
             <Grid component={Paper} elevation={3} sx={{ p: 2 }}>

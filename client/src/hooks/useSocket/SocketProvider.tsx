@@ -3,11 +3,12 @@ import { io } from "socket.io-client"
 import { useAppSelector, useAppDispatch } from "../../app/hooks"
 import {
   selectUser,
-  // selectPermissions,
+  selectPermissions,
   addPermission,
   removePermission,
   setUser,
 } from "../../features/user/userSlice"
+import { setSensors } from "../../features/sensors/sensorsSlice"
 import SocketContext from "./SocketContext"
 import type { ReactNode } from "react"
 import type { Socket } from "socket.io-client"
@@ -19,36 +20,49 @@ type SocketProviderProps = {
   children: ReactNode
 }
 
-export type SocketMessage = {
-  type:
-    | "notification"
-    | "error"
-    | "user_created"
-    | "user_updated"
-    | "user_deleted"
-    | "role_created"
-    | "role_updated"
-    | "role_deleted"
-    | "role_permission_added"
-    | "role_permission_removed"
-  payload:
-    | UserRead
-    | RoleRead
-    | PermissionRead
-    | string
-    | number
-    | { role_id: number }
-    | { user_id: number }
-    | { role: RoleRead; permission: PermissionRead }
-    | { message: string }
-}
+// export type SocketMessage = {
+//   type:
+//     | "notification"
+//     | "error"
+//     | "user_created"
+//     | "user_updated"
+//     | "user_deleted"
+//     | "role_created"
+//     | "role_updated"
+//     | "role_deleted"
+//     | "role_permission_added"
+//     | "role_permission_removed"
+//     | "sensors"
+//   payload:
+//     | UserRead
+//     | RoleRead
+//     | PermissionRead
+//     | string
+//     | number
+//     | { role_id: number }
+//     | { user_id: number }
+//     | { role: RoleRead; permission: PermissionRead }
+//     | { message: string }
+//     | Record<string, string>
+// }
+export type SocketMessage =
+  | { type: "notification" | "error"; payload: string | { message: string } }
+  | { type: "user_created" | "user_updated"; payload: { user: UserRead } }
+  | { type: "user_deleted"; payload: { user_id: number } }
+  | { type: "role_created" | "role_updated"; payload: RoleRead }
+  | { type: "role_deleted"; payload: { role_id: number } }
+  | {
+      type: "role_permission_added" | "role_permission_removed"
+      payload: { role: RoleRead; permission: PermissionRead }
+    }
+  | { type: "sensors"; payload: Record<string, [string]> }
 
 export const SocketProvider = ({ children }: SocketProviderProps) => {
   const dispatch = useAppDispatch()
   const WS_PATH = (import.meta.env.VITE_WS_PATH as string | undefined) ?? "/ws"
   //   const WS_URL = import.meta.env.VITE_WS_URL || window.location.origin;
   const user = useAppSelector(selectUser)
-  // const permissions = useAppSelector(selectPermissions)
+  const permissions = useAppSelector(selectPermissions)
   const socketRef = useRef<Socket | null>(null)
   const [status, setStatus] = useState("disconnected")
   const [message, setMessage] = useState<SocketMessage | null>(null)
@@ -82,8 +96,14 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     })
     socket.on("msg", (message: SocketMessage) => {
       setMessage(message)
-      // console.log(`\u001b[36mMessage received: ${JSON.stringify(message)}\u001b[0m`);
+      console.log(
+        `\u001b[36mMessage received: ${JSON.stringify(message)}\u001b[0m`,
+      )
     })
+
+    if (permissions?.includes("sensors:read")) {
+      socket.emit("sensor_list", { list: "all" })
+    }
 
     return () => {
       socket.off("connect")
@@ -95,7 +115,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       // socketRef.current = null;
       // console.log(`\u001b[31mSocket disconnected on cleanup\u001b[0m`);
     }
-  }, [user, WS_PATH])
+  }, [user, WS_PATH, permissions])
 
   const reconnect = () => {
     if (socketRef.current && !socketRef.current.connected) {
@@ -113,13 +133,15 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           case "notification":
             // Handle notification messages (e.g., show a toast)
             console.log(
-              `Notification: ${typeof message.payload === "object" ? JSON.stringify(message.payload) : String(message.payload)}`,
+              message,
+              // `Notification: ${typeof message.payload === "object" ? JSON.stringify(message.payload) : String(message.payload)}`,
             )
             break
           case "error":
             // Handle error messages (e.g., show an error alert)
             console.error(
-              `Error: ${typeof message.payload === "object" ? JSON.stringify(message.payload) : String(message.payload)}`,
+              message,
+              // `Error: ${typeof message.payload === "object" ? JSON.stringify(message.payload) : String(message.payload)}`,
             )
             break
           case "role_created":
@@ -132,7 +154,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                     typeof message.payload === "object" &&
                     "id" in message.payload
                   ) {
-                    draft.push(message.payload as RoleRead)
+                    draft.push(message.payload)
                   }
                 },
               ),
@@ -166,7 +188,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                     typeof message.payload === "object" &&
                     "id" in message.payload
                   ) {
-                    const updatedRole = message.payload as RoleRead
+                    const updatedRole = message.payload
                     const index = draft.findIndex(
                       role => role.id === updatedRole.id,
                     )
@@ -297,8 +319,11 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
               ),
             )
             break
+          case "sensors":
+            dispatch(setSensors(message.payload.sensors))
+            break
           default:
-            console.warn("Unhandled message type:", message.type)
+            console.warn("Unhandled message type:", message)
         }
       }
       // if (typeof message.payload === "object") {

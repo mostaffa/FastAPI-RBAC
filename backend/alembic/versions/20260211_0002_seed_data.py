@@ -35,6 +35,7 @@ PERMISSIONS = [
     "permission:read",
     "permission:update",
     "permission:delete",
+    "sensors:read",
 ]
 
 
