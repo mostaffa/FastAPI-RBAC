@@ -52,6 +52,39 @@ Permissions follow a `resource:action` naming convention:
 
 ## 🚀 Quick Start
 
+## 🐳 Docker Compose (API + Postgres + Nginx UI)
+
+This project now includes a full Docker Compose setup with:
+- `api`: FastAPI service (runs Alembic migrations on startup)
+- `postgres`: PostgreSQL 16
+- `ui`: React build served by Nginx with reverse proxy to API/WebSocket
+
+### Start All Services
+
+```bash
+docker compose up --build -d
+```
+
+### Access Services
+
+- UI: `http://localhost:8080`
+- API docs: `http://localhost:4000/api/docs`
+- API via UI proxy: `http://localhost:8080/api/...`
+
+### Stop Services
+
+```bash
+docker compose down
+```
+
+### Reset Database Volume
+
+```bash
+docker compose down -v
+```
+
+The Compose file is at `docker-compose.yml` in the project root.
+
 ### Prerequisites
 
 - Python 3.10+

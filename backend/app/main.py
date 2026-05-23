@@ -1,4 +1,6 @@
 # app/main.py
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -32,13 +34,20 @@ app.include_router(api_router, prefix="/api/v1")
 # 3. Mount Socket.IO
 app.mount("/ws", socket_app)
 
-# 4. Mount static files (React assets)
-app.mount("/assets", StaticFiles(directory="app/static/assets"), name="assets")
+STATIC_ROOT = Path("app/static")
+ASSETS_DIR = STATIC_ROOT / "assets"
+INDEX_FILE = STATIC_ROOT / "index.html"
 
-@app.get("/{path_param:path}")
-async def serve_react(path_param: str):
-    """
-    Serve the React app for all unmatched routes (SPA catch-all)
-    React Router will handle the routing on the client side
-    """
-    return FileResponse("app/static/index.html")
+# 4. Mount static files only when frontend assets are present.
+if ASSETS_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+
+
+if INDEX_FILE.exists():
+    @app.get("/{path_param:path}")
+    async def serve_react(path_param: str):
+        """
+        Serve the React app for all unmatched routes (SPA catch-all)
+        React Router will handle the routing on the client side
+        """
+        return FileResponse(str(INDEX_FILE))

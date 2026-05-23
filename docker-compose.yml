@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fastapi_rbac_postgres
+    environment:
+      POSTGRES_DB: rbac
+      POSTGRES_USER: rbac
+      POSTGRES_PASSWORD: sudoAptUpdate
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rbac -d rbac"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fastapi_rbac_api
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://rbac:sudoAptUpdate@postgres:5432/rbac
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: fastapi_rbac_ui
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
