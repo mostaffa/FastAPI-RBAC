@@ -19,6 +19,9 @@ import PersonIcon from "@mui/icons-material/Person"
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline"
 import GroupsIcon from "@mui/icons-material/Groups"
 import SensorsIcon from "@mui/icons-material/Sensors"
+import SettingsIcon from "@mui/icons-material/Settings"
+import TerminalIcon from '@mui/icons-material/Terminal';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
 import {
   getDrawerSxTransitionMixin,
   getDrawerWidthTransitionMixin,
@@ -184,7 +187,6 @@ export default function DashboardSidebar({
               permissions.includes("user:read") ||
               permissions.includes("permission:read")) && (
               <>
-                {/* <DashboardSidebarDividerItem /> */}
                 <DashboardSidebarHeaderItem>Admin</DashboardSidebarHeaderItem>
 
                 <DashboardSidebarPageItem
@@ -236,47 +238,91 @@ export default function DashboardSidebar({
                     </List>
                   }
                 />
+
+                <DashboardSidebarDividerItem />
               </>
             )}
-
-            <DashboardSidebarDividerItem />
+            {permissions.includes("terminal:read") && (
+              <>
+                <DashboardSidebarHeaderItem>
+                  Management
+                </DashboardSidebarHeaderItem>
+                <DashboardSidebarPageItem
+                  id="manage"
+                  title={"Management"}
+                  icon={<SettingsIcon />}
+                  selected={!!matchPath("/manage/*", pathname)}
+                  defaultExpanded={!!matchPath("/manage/", pathname)}
+                  expanded={expandedItemIds.includes("manage")}
+                  nestedNavigation={
+                    <List
+                      dense
+                      sx={{
+                        padding: 0,
+                        my: 1,
+                        pl: mini ? 0 : 1,
+                        minWidth: 240,
+                      }}
+                    >
+                      <DashboardSidebarPageItem
+                        id={"terminal"}
+                        title={"Terminal"}
+                        icon={<TerminalIcon />}
+                        href={"/manage/terminal/"}
+                        selected={!!matchPath("/manage/terminal/", pathname)}
+                      />
+                      <DashboardSidebarPageItem
+                        id={"status"}
+                        title={"Status"}
+                        icon={<AutorenewIcon />}
+                        href={"/manage/status/"}
+                        selected={!!matchPath("/manage/status/", pathname)}
+                      />
+                    </List>
+                  }
+                />
+                <DashboardSidebarDividerItem />
+              </>
+            )}
             {permissions.includes("sensors:read") && (
               <>
                 {sensors && (
                   <>
-                  <DashboardSidebarHeaderItem>Sensors</DashboardSidebarHeaderItem>
-                  <DashboardSidebarPageItem
-                    id="sensors"
-                    title={"Sensors (" + String(sensors.length) + ")"}
-                    icon={<SensorsIcon />}
-                    selected={!!matchPath("/sensors/*", pathname)}
-                    defaultExpanded={!!matchPath("/sensors/", pathname)}
-                    expanded={expandedItemIds.includes("sensors")}
-                    nestedNavigation={
-                      <List
-                        dense
-                        sx={{
-                          padding: 0,
-                          my: 1,
-                          pl: mini ? 0 : 1,
-                          minWidth: 240,
-                        }}
-                      >
-                        {sensors.map((sensor, idx) => (
-                          <DashboardSidebarPageItem
-                            key={sensor + String(idx)}
-                            id={sensor}
-                            title={sensor}
-                            icon={<SensorsIcon />}
-                            href={"/sensors/" + sensor}
-                            selected={
-                              !!matchPath("/sensors/" + sensor, pathname)
-                            }
-                          />
-                        ))}
-                      </List>
-                    }
-                  />
+                    <DashboardSidebarHeaderItem>
+                      Sensors
+                    </DashboardSidebarHeaderItem>
+                    <DashboardSidebarPageItem
+                      id="sensors"
+                      title={"Sensors (" + String(sensors.length) + ")"}
+                      icon={<SensorsIcon />}
+                      selected={!!matchPath("/sensors/*", pathname)}
+                      defaultExpanded={!!matchPath("/sensors/", pathname)}
+                      expanded={expandedItemIds.includes("sensors")}
+                      nestedNavigation={
+                        <List
+                          dense
+                          sx={{
+                            padding: 0,
+                            my: 1,
+                            pl: mini ? 0 : 1,
+                            minWidth: 240,
+                          }}
+                        >
+                          {sensors.map((sensor, idx) => (
+                            <DashboardSidebarPageItem
+                              key={sensor + String(idx)}
+                              id={sensor}
+                              title={sensor}
+                              icon={<SensorsIcon />}
+                              href={"/sensors/" + sensor}
+                              selected={
+                                !!matchPath("/sensors/" + sensor, pathname)
+                              }
+                            />
+                          ))}
+                        </List>
+                      }
+                    />
                   </>
                 )}
 

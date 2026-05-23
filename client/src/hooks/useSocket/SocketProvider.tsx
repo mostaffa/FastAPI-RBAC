@@ -15,6 +15,7 @@ import type { Socket } from "socket.io-client"
 import type { UserRead, RoleRead, PermissionRead, UserOut } from "../../api"
 import { rolesApiSlice } from "../../features/user/rolesApiSlice"
 import { usersApiSlice } from "../../features/user/usersApiSlice"
+import useNotifications from "../useNotifications/useNotifications"
 
 type SocketProviderProps = {
   children: ReactNode
@@ -45,8 +46,9 @@ type SocketProviderProps = {
 //     | { message: string }
 //     | Record<string, string>
 // }
+export type ServerNotification = {type: "error" | "info" | "success" | "warning"; code: number; message: string}
 export type SocketMessage =
-  | { type: "notification" | "error"; payload: string | { message: string } }
+  | { type: "notification" ; payload: {type: "error" | "info" | "success" | "warning"; code: number; message: string} }
   | { type: "user_created" | "user_updated"; payload: { user: UserRead } }
   | { type: "user_deleted"; payload: { user_id: number } }
   | { type: "role_created" | "role_updated"; payload: RoleRead }
@@ -66,6 +68,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const socketRef = useRef<Socket | null>(null)
   const [status, setStatus] = useState("disconnected")
   const [message, setMessage] = useState<SocketMessage | null>(null)
+  const [serverNotification, setServerNotification] = useState<ServerNotification>()
+  const {show} = useNotifications()
 
   useEffect(() => {
     socketRef.current ??= io({
@@ -101,6 +105,10 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       )
     })
 
+    socket.on("notification", (noti: ServerNotification) => {
+      setServerNotification(noti)
+    })
+
     if (permissions?.includes("sensors:read")) {
       socket.emit("sensor_list", { list: "all" })
     }
@@ -111,6 +119,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       socket.off("connect_error")
       socket.off("reconnect_attempt")
       socket.off("msg")
+      socket.off("notification")
       // socket?.disconnect();
       // socketRef.current = null;
       // console.log(`\u001b[31mSocket disconnected on cleanup\u001b[0m`);
@@ -130,20 +139,6 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     if (user && socketRef.current) {
       if (message) {
         switch (message.type) {
-          case "notification":
-            // Handle notification messages (e.g., show a toast)
-            console.log(
-              message,
-              // `Notification: ${typeof message.payload === "object" ? JSON.stringify(message.payload) : String(message.payload)}`,
-            )
-            break
-          case "error":
-            // Handle error messages (e.g., show an error alert)
-            console.error(
-              message,
-              // `Error: ${typeof message.payload === "object" ? JSON.stringify(message.payload) : String(message.payload)}`,
-            )
-            break
           case "role_created":
             dispatch(
               rolesApiSlice.util.updateQueryData(
@@ -355,6 +350,16 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       // }
     }
   }, [user, message, dispatch])
+
+  useEffect(() => {
+    if(serverNotification){
+      // console.log(serverNotification)
+      show(serverNotification.message, {
+        severity: serverNotification.type,
+        autoHideDuration: serverNotification.type === "error"? 10000 : 3000
+      })
+    }
+  }, [serverNotification])
 
   const contextValue = React.useMemo(
     () => ({

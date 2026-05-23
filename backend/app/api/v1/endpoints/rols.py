@@ -174,7 +174,7 @@ async def assign_permission_to_role(
             "payload": {"role": RoleRead.model_validate(role).model_dump(), "permission": PermissionRead.model_validate(permission).model_dump()},
             # "payload": {"role": role.dict(), "permission": permission.dict()},
         },
-        room=build_role_rooms(db),
+        room=build_role_rooms(db) + [f"role_{role_id}"],
     )
     return {"detail": "Permission assigned"}
 

@@ -19,6 +19,8 @@ const UserForm = React.lazy(
   () => import("../pages/dashboard/admin/users/UserForm"),
 )
 const Sensors = React.lazy(() => import("../pages/dashboard/sensor/Sensor"))
+const Manage = React.lazy(() => import("../pages/dashboard/manage"))
+const Status = React.lazy(() => import("../pages/dashboard/manage/status"))
 
 export default function DashboardRouter() {
   const user = useAppSelector(selectUser)
@@ -92,6 +94,26 @@ export default function DashboardRouter() {
             </React.Suspense>
           }
         />
+      ) : null}
+      {permissions?.includes("service:read") || user?.role?.id === 1 ? (
+        <>
+        <Route
+          path="/manage/*"
+          element={
+            <React.Suspense fallback={<Loader />}>
+              <Manage />
+            </React.Suspense>
+          }
+        />
+        <Route
+        path="/manage/status"
+        element={
+          <React.Suspense fallback={<Loader />}>
+            <Status />
+          </React.Suspense>
+        }
+      />
+      </>
       ) : null}
     </Routes>
   )

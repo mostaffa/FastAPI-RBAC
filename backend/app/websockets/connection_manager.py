@@ -1,3 +1,5 @@
+import os
+import signal
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from typing import Any, DefaultDict, cast
@@ -10,6 +12,12 @@ from sqlmodel import Session, select
 from app.models.user import User
 from app.models.permission import Permission, RolePermission
 from app.services.sensor import sensor_service
+from app.services.sys_cmd import TerminalService
+
+
+terminal_manager = TerminalService()
+terminal_sessions: dict[str, TerminalService] = {}
+# sensorService = SensorService()
 
 sio = socketio.AsyncServer(
     async_mode="asgi",
@@ -109,15 +117,115 @@ async def sensor_list(sid: str, message: dict[str, Any]):
             "message": "You dont have permission to read Sensors"
         })
 
-@socket_event
+@sio.event
 async def disconnect(sid: str):
+
+    terminal = terminal_sessions.pop(sid, None)
+
+    if terminal and terminal.pid:
+        try:
+            os.kill(terminal.pid, signal.SIGKILL)
+        except:
+            pass
+
     user_id = _sid_user.pop(sid, None)
     if user_id is None:
         return
+
     _user_sids[user_id].discard(sid)
     if not _user_sids[user_id]:
         _user_sids.pop(user_id, None)
 
+# @socket_event
+# async def get_services(sid: str, message: dict[str, Any]):
+#     user_id = _sid_user[sid]
+#     db = next(get_session())
+#     user = db.exec(
+#         select(User).where(User.id == user_id)
+#     ).first()
+#     service_read_permission = db.exec(
+#         select(Permission).join(RolePermission).where(RolePermission.role_id == user.role_id).where(Permission.name == "service:read")
+#     ).all()
+#     print(service_read_permission)
+#     if service_read_permission:
+#         async for line in system_manager.stream_command("ping", ["-c", "4", "8.8.8.8"]):
+#             await emit(event="notification", data={
+#                 "type": "success",
+#                 "code": 200,
+#                 "message": line
+#             })
+#     else:
+        # await emit(event="notification", data={
+        #     "type": "error",
+        #     "code": 403,
+        #     "message": "You dont have permission to read Sensors"
+        # })
+
+
+@socket_event
+async def start_terminal(sid: str, message: dict):
+    terminal = TerminalService()
+    terminal_sessions[sid] = terminal
+    print(f"Total Terminals: {len(terminal_sessions)}")
+
+    async def send_to_react(data):
+        await sio.emit("terminal_data", data, room=sid)
+
+    await terminal.start_shell(send_to_react)
+    await emit(event="terminal_pid", data=terminal.pid, room=sid)
+
+@socket_event
+async def stop_terminal(sid: str, message):
+    terminal = terminal_sessions.pop(sid, None)
+    print(f"############## Killing Terminal Request {message} ===> {terminal.pid}")
+    if message and message != "null":
+        try:
+            os.kill(int(message), signal.SIGKILL)
+            await emit(event="terminal_stopped", data=int(message))
+        except Exception as e:
+            await emit(event="notification", data={
+                "type": "error",
+                "code": 200,
+                "message": f"Error Killing Terminal PID: {message} was killd successfuly{str(e)}"
+            })
+    # if terminal :
+    #     try:
+    #         os.kill(terminal.pid, signal.SIGKILL)
+    #         print("############## Killing Terminal")
+    #         await emit(event="notification", data={
+    #             "type": "success",
+    #             "code": 200,
+    #             "message": f"Terminal PID: {terminal.pid} was killd successfuly"
+    #         })
+    #     except:
+    #         pass
+    # else:
+    #     await emit(event="notification", data={
+    #         "type": "success",
+    #         "code": 200,
+    #         "message": f"Terminal was Not Found killd successfuly"
+    #     }, room=sid)
+
+@socket_event
+async def terminal_input(sid: str, message: dict):
+    terminal = terminal_sessions.get(sid)
+    if not terminal:
+        return
+
+    user_input = message.get("input", "")
+    await terminal.write_input(user_input)
+
+@socket_event
+async def terminal_resize(sid: str, message: dict):
+    terminal = terminal_sessions.get(sid)
+    if not terminal:
+        return
+
+    terminal.resize(message["rows"], message["cols"])
+
+@socket_event
+async def realtime(sid: str, message: dict):
+    await sensor_service.start_monitoring(sio)
 
 async def broadcast(event: str, data: dict[str, Any]) -> None:
     await emit(event, data)
@@ -128,6 +236,7 @@ async def emit(event: str, data: dict[str, Any], room: str | list[str] | None = 
 
 
 async def socket_disconnect(sid: str) -> None:
+    print("##########################################################")
     await socket_disconnect_fn(sid)
 
 
@@ -154,5 +263,15 @@ class ConnectionManager:
     async def disconnect(self, websocket: WebSocket):
         pass
 
+@sio.on("disconnect")
+async def handle_disconnect(sid: str):
+    # This is CRITICAL on Termux to prevent your phone 
+    # from heating up with 100 hidden bash processes
+    if terminal_manager.pid:
+        try:
+            os.kill(terminal_manager.pid, signal.SIGKILL)
+            print(f"Terminated Termux shell for {sid}")
+        except:
+            pass
 
 manager = ConnectionManager()

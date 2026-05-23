@@ -13,7 +13,7 @@ class SensorService:
         self.is_running = True
 
         self._process = await asyncio.create_subprocess_exec(
-            'termux-sensor', '-a',
+            'termux-sensor', '-s', "gravity",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
@@ -30,14 +30,16 @@ class SensorService:
                     try:
                         sensor_json = json.loads(data)
                         # Broadcast to all React clients
-                        await manager.broadcast({
+                        await manager.emit({
+                            "event": "realtime",
                             "type": "sensor_update",
                             "data": sensor_json
                         })
                     except json.JSONDecodeError:
                         continue 
         finally:
-            self.stop_monitoring()
+            pass
+            # self.stop_monitoring()
 
     async def get_sensor_list(self):
         """Executes 'termux-sensor -l' and returns a parsed list of sensors"""
