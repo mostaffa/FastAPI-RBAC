@@ -26,7 +26,7 @@ markdown-it-py
 MarkupSafe
 mdurl
 passlib
-psycopg2
+psycopg2-binary
 pyasn1
 pycparser
 pydantic
