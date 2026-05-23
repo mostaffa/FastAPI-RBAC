@@ -2,10 +2,8 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: fastapi_rbac_postgres
-    environment:
-      POSTGRES_DB: rbac
-      POSTGRES_USER: rbac
-      POSTGRES_PASSWORD: sudoAptUpdate
+    env_file:
+      - ./backend/.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
