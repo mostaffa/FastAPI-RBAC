@@ -20,7 +20,7 @@ class TerminalService:
             # Termux environment setup
             shell = os.environ.get("SHELL", "bash") 
             os.environ["TERM"] = "xterm-256color"
-            os.chdir(os.environ.get("HOME", "/data/data/com.termux/files/home"))
+            os.chdir(os.environ.get("HOME", "/home"))
             os.execlp(shell, shell)
         else:  # Parent process
             # 1. SET NON-BLOCKING

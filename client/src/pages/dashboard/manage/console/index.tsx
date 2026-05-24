@@ -114,11 +114,11 @@ export default function Console() {
       requestStartTerminal()
     }
 
-    const handlePid = (pid: number) => {
-      procId.current = pid
-      terminalLifecycleState.pid = pid
+    const handlePid = (data: { terminal_pid: number }) => {
+      procId.current = data.terminal_pid
+      terminalLifecycleState.pid = data.terminal_pid
       terminalLifecycleState.startRequested = true
-      setPid(pid)
+      setPid(data.terminal_pid)
     }
 
     socket.on("terminal_data", handleData)

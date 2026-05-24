@@ -2,13 +2,14 @@ import os
 import signal
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
+from types import CoroutineType
 from typing import Any, DefaultDict, cast
 import socketio  # pyright: ignore[reportMissingTypeStubs]
 from fastapi import WebSocket
 from http.cookies import SimpleCookie
 from app.db.session import get_session
 from app.core.security import get_current_user_from_token, extract_bearer_from_cookie_value
-from sqlmodel import Session, select
+from sqlmodel import  select
 from app.models.user import User
 from app.models.permission import Permission, RolePermission
 from app.services.sensor import sensor_service
@@ -95,10 +96,16 @@ async def sensor_list(sid: str, message: dict[str, Any]):
     print(message)
     user_id = _sid_user[sid]
     db = next(get_session())
-    user = db.exec(
+    user: User | None = db.exec(
         select(User).where(User.id == user_id)
     ).first()
-    print(user)
+    if not user:
+        print(f"\u001b[31mUser not found for SID: {sid}\u001b[0m")
+        await emit(event="error", data={
+            "code": 404,
+            "message": "User not found"
+        }, room=sid)
+        return
     sensor_read_perm = db.exec(
         select(Permission).join(RolePermission).where(RolePermission.role_id == user.role_id).where(Permission.name == "sensors:read")
     ).all()
@@ -117,7 +124,7 @@ async def sensor_list(sid: str, message: dict[str, Any]):
             "message": "You dont have permission to read Sensors"
         })
 
-@sio.event
+@socket_event
 async def disconnect(sid: str):
 
     terminal = terminal_sessions.pop(sid, None)
@@ -160,7 +167,7 @@ async def disconnect(sid: str):
 
 
 @socket_event
-async def start_terminal(sid: str, message: dict):
+async def start_terminal(sid: str, message: None):
     print(f"Start Terminal Request: {message}, SID: {sid}")
     existing_terminal = terminal_sessions.pop(sid, None)
     if existing_terminal:
@@ -170,14 +177,14 @@ async def start_terminal(sid: str, message: dict):
     terminal_sessions[sid] = terminal
     print(f"Total Terminals: {len(terminal_sessions)}")
 
-    async def send_to_react(data):
-        await sio.emit("terminal_data", data, room=sid)
+    async def send_to_react(data: str):
+        await cast(Any, sio).emit(event="terminal_data", data=data, room=sid)
 
     await terminal.start_shell(send_to_react)
-    await emit(event="terminal_pid", data=terminal.pid, room=sid)
+    await emit(event="terminal_pid", data={"terminal_pid": terminal.pid}, room=sid)
 
 @socket_event
-async def stop_terminal(sid: str, message):
+async def stop_terminal(sid: str, message: None):
     print(f"Stop Terminal Request: {message}, SID: {sid}")
     terminal = terminal_sessions.pop(sid, None)
     if not terminal:
@@ -186,7 +193,7 @@ async def stop_terminal(sid: str, message):
     stopped_pid = await terminal.stop()
     print(f"############## Killing Terminal with PID: {stopped_pid}")
     if stopped_pid is not None:
-        await emit(event="terminal_stopped", data=stopped_pid)
+        await emit(event="terminal_stopped", data={ "terminal_pid": stopped_pid }, room=sid)
 
 @socket_event
 async def terminal_input(sid: str, message: dict):
