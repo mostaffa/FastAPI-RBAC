@@ -53,7 +53,7 @@ const RolePermission: React.FC<{ roleId: number }> = ({ roleId }) => {
               draft.push({
                 id: permissionId,
                 name: `permission:${String(permissionId)}`,
-              } as PermissionRead)
+              })
             },
           ),
         )

@@ -95,25 +95,25 @@ export default function DashboardRouter() {
           }
         />
       ) : null}
-      {permissions?.includes("service:read") || user?.role?.id === 1 ? (
+      {permissions?.includes("terminal:read") || user?.role?.id === 1 ? (
         <>
-        <Route
-          path="/manage/*"
-          element={
-            <React.Suspense fallback={<Loader />}>
-              <Manage />
-            </React.Suspense>
-          }
-        />
-        <Route
-        path="/manage/status"
-        element={
-          <React.Suspense fallback={<Loader />}>
-            <Status />
-          </React.Suspense>
-        }
-      />
-      </>
+          <Route
+            path="/manage/*"
+            element={
+              <React.Suspense fallback={<Loader />}>
+                <Manage />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/manage/status"
+            element={
+              <React.Suspense fallback={<Loader />}>
+                <Status />
+              </React.Suspense>
+            }
+          />
+        </>
       ) : null}
     </Routes>
   )

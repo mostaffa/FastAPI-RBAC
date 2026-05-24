@@ -122,11 +122,8 @@ async def disconnect(sid: str):
 
     terminal = terminal_sessions.pop(sid, None)
 
-    if terminal and terminal.pid:
-        try:
-            os.kill(terminal.pid, signal.SIGKILL)
-        except:
-            pass
+    if terminal:
+        await terminal.stop()
 
     user_id = _sid_user.pop(sid, None)
     if user_id is None:
@@ -164,6 +161,11 @@ async def disconnect(sid: str):
 
 @socket_event
 async def start_terminal(sid: str, message: dict):
+    print(f"Start Terminal Request: {message}, SID: {sid}")
+    existing_terminal = terminal_sessions.pop(sid, None)
+    if existing_terminal:
+        await existing_terminal.stop()
+
     terminal = TerminalService()
     terminal_sessions[sid] = terminal
     print(f"Total Terminals: {len(terminal_sessions)}")
@@ -176,38 +178,19 @@ async def start_terminal(sid: str, message: dict):
 
 @socket_event
 async def stop_terminal(sid: str, message):
+    print(f"Stop Terminal Request: {message}, SID: {sid}")
     terminal = terminal_sessions.pop(sid, None)
-    print(f"############## Killing Terminal Request {message} ===> {terminal.pid}")
-    if message and message != "null":
-        try:
-            os.kill(int(message), signal.SIGKILL)
-            await emit(event="terminal_stopped", data=int(message))
-        except Exception as e:
-            await emit(event="notification", data={
-                "type": "error",
-                "code": 200,
-                "message": f"Error Killing Terminal PID: {message} was killd successfuly{str(e)}"
-            })
-    # if terminal :
-    #     try:
-    #         os.kill(terminal.pid, signal.SIGKILL)
-    #         print("############## Killing Terminal")
-    #         await emit(event="notification", data={
-    #             "type": "success",
-    #             "code": 200,
-    #             "message": f"Terminal PID: {terminal.pid} was killd successfuly"
-    #         })
-    #     except:
-    #         pass
-    # else:
-    #     await emit(event="notification", data={
-    #         "type": "success",
-    #         "code": 200,
-    #         "message": f"Terminal was Not Found killd successfuly"
-    #     }, room=sid)
+    if not terminal:
+        return
+
+    stopped_pid = await terminal.stop()
+    print(f"############## Killing Terminal with PID: {stopped_pid}")
+    if stopped_pid is not None:
+        await emit(event="terminal_stopped", data=stopped_pid)
 
 @socket_event
 async def terminal_input(sid: str, message: dict):
+    print(f"Terminal Input: {message}, SID: {sid}")
     terminal = terminal_sessions.get(sid)
     if not terminal:
         return
@@ -217,6 +200,7 @@ async def terminal_input(sid: str, message: dict):
 
 @socket_event
 async def terminal_resize(sid: str, message: dict):
+    print(f"Terminal Resize: {message}, SID: {sid}")
     terminal = terminal_sessions.get(sid)
     if not terminal:
         return

@@ -20,8 +20,8 @@ import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline"
 import GroupsIcon from "@mui/icons-material/Groups"
 import SensorsIcon from "@mui/icons-material/Sensors"
 import SettingsIcon from "@mui/icons-material/Settings"
-import TerminalIcon from '@mui/icons-material/Terminal';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
+import TerminalIcon from "@mui/icons-material/Terminal"
+import AutorenewIcon from "@mui/icons-material/Autorenew"
 import {
   getDrawerSxTransitionMixin,
   getDrawerWidthTransitionMixin,

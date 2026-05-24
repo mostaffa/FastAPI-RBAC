@@ -46,9 +46,20 @@ type SocketProviderProps = {
 //     | { message: string }
 //     | Record<string, string>
 // }
-export type ServerNotification = {type: "error" | "info" | "success" | "warning"; code: number; message: string}
+export type ServerNotification = {
+  type: "error" | "info" | "success" | "warning"
+  code: number
+  message: string
+}
 export type SocketMessage =
-  | { type: "notification" ; payload: {type: "error" | "info" | "success" | "warning"; code: number; message: string} }
+  | {
+      type: "notification"
+      payload: {
+        type: "error" | "info" | "success" | "warning"
+        code: number
+        message: string
+      }
+    }
   | { type: "user_created" | "user_updated"; payload: { user: UserRead } }
   | { type: "user_deleted"; payload: { user_id: number } }
   | { type: "role_created" | "role_updated"; payload: RoleRead }
@@ -68,8 +79,9 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const socketRef = useRef<Socket | null>(null)
   const [status, setStatus] = useState("disconnected")
   const [message, setMessage] = useState<SocketMessage | null>(null)
-  const [serverNotification, setServerNotification] = useState<ServerNotification>()
-  const {show} = useNotifications()
+  const [serverNotification, setServerNotification] =
+    useState<ServerNotification>()
+  const { show } = useNotifications()
 
   useEffect(() => {
     socketRef.current ??= io({
@@ -161,8 +173,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                 "getRoles",
                 undefined,
                 draft => {
-                  const deletedRoleId = (message.payload as { role_id: number })
-                    .role_id
+                  const deletedRoleId = message.payload.role_id
                   const deleteIndex = draft.findIndex(
                     role => role.id === deletedRoleId,
                   )
@@ -196,9 +207,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
             )
             break
           case "role_permission_added": {
-            const permissionToAdd = (
-              message.payload as { role: RoleRead; permission: PermissionRead }
-            ).permission
+            const permissionToAdd = message.payload.permission
             dispatch(
               rolesApiSlice.util.updateQueryData(
                 "getRolePermissions",
@@ -219,9 +228,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
             break
           }
           case "role_permission_removed": {
-            const permissionToRemove = (
-              message.payload as { role: RoleRead; permission: PermissionRead }
-            ).permission
+            const permissionToRemove = message.payload.permission
             dispatch(
               rolesApiSlice.util.updateQueryData(
                 "getRolePermissions",
@@ -254,7 +261,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                     typeof message.payload === "object" &&
                     "user" in message.payload
                   ) {
-                    draft.push((message.payload as { user: UserRead }).user)
+                    draft.push(message.payload.user)
                   }
                 },
               ),
@@ -270,8 +277,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                     typeof message.payload === "object" &&
                     "user" in message.payload
                   ) {
-                    const updatedUser = (message.payload as { user: UserRead })
-                      .user
+                    const updatedUser = message.payload.user
                     const index = draft.findIndex(u => u.id === updatedUser.id)
                     if (index !== -1) {
                       draft[index] = updatedUser
@@ -302,8 +308,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                 "getUsers",
                 { skip: 0, limit: 100 },
                 draft => {
-                  const deletedUserId = (message.payload as { user_id: number })
-                    .user_id
+                  const deletedUserId = message.payload.user_id
                   const deleteIndex = draft.findIndex(
                     u => u.id === deletedUserId,
                   )
@@ -321,45 +326,18 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
             console.warn("Unhandled message type:", message)
         }
       }
-      // if (typeof message.payload === "object") {
-      //   if (
-      //     message.type === "role_permission_added" &&
-      //     "role" in message.payload &&
-      //     "permission" in message.payload
-      //   ) {
-      //     if (user.role?.id === message.payload.role.id) {
-      //       const payload = message.payload as {
-      //         role: RoleRead
-      //         permission: PermissionRead
-      //       }
-      //       dispatch(addPermission(payload.permission.name))
-      //     }
-      //   } else if (
-      //     message.type === "role_permission_removed" &&
-      //     "role" in message.payload &&
-      //     "permission" in message.payload
-      //   ) {
-      //     if (user.role?.id === message.payload.role.id) {
-      //       const payload = message.payload as {
-      //         role: RoleRead
-      //         permission: PermissionRead
-      //       }
-      //       dispatch(removePermission(payload.permission.name))
-      //     }
-      //   }
-      // }
     }
   }, [user, message, dispatch])
 
   useEffect(() => {
-    if(serverNotification){
+    if (serverNotification) {
       // console.log(serverNotification)
       show(serverNotification.message, {
         severity: serverNotification.type,
-        autoHideDuration: serverNotification.type === "error"? 10000 : 3000
+        autoHideDuration: serverNotification.type === "error" ? 10000 : 3000,
       })
     }
-  }, [serverNotification])
+  }, [serverNotification, show])
 
   const contextValue = React.useMemo(
     () => ({

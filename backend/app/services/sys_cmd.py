@@ -4,14 +4,16 @@ import fcntl
 import asyncio
 import struct
 import termios
-from typing import Optional
+import signal
+from typing import Awaitable, Callable, Optional
 
 class TerminalService:
     def __init__(self):
         self.master_fd: Optional[int] = None
         self.pid: Optional[int] = None
+        self._read_task: Optional[asyncio.Task[None]] = None
 
-    async def start_shell(self, callback):
+    async def start_shell(self, callback: Callable[[str], Awaitable[None]]) -> None:
         self.pid, self.master_fd = pty.fork()
 
         if self.pid == 0:  # Child process
@@ -34,13 +36,15 @@ class TerminalService:
                 pass
 
             # 3. START THE READ LOOP
-            asyncio.create_task(self._read_loop(callback))
+            self._read_task = asyncio.create_task(self._read_loop(callback))
 
-    async def _read_loop(self, callback):
+    async def _read_loop(self, callback: Callable[[str], Awaitable[None]]) -> None:
         while self.master_fd is not None:
             try:
                 # Check if there is data to read without blocking
                 data = os.read(self.master_fd, 4096) 
+                if data == b"":
+                    break
                 if data:
                     # Send the decoded string. 
                     # Use 'replace' to avoid crashing on partial multi-byte chars
@@ -54,16 +58,95 @@ class TerminalService:
                 print(f"Read Error: {e}")
                 break
 
-    async def write_input(self, data: str):
-        if self.master_fd:
+        if self.master_fd is not None:
+            try:
+                os.close(self.master_fd)
+            except OSError:
+                pass
+            self.master_fd = None
+        self._read_task = None
+
+    async def write_input(self, data: str) -> None:
+        if self.master_fd is not None:
             # print(f"Sending to PTY: {repr(data)}") # Debug print
             os.write(self.master_fd, data.encode())
 
     def resize(self, rows: int, cols: int):
         """Adjusts the 'window size' inside the PTY."""
-        if self.master_fd:
+        if self.master_fd is not None:
             s = struct.pack('HHHH', rows, cols, 0, 0)
             fcntl.ioctl(self.master_fd, termios.TIOCSWINSZ, s)
+
+    async def stop(self, pid: Optional[int] = None) -> Optional[int]:
+        target_pid = pid or self.pid
+
+        if self.master_fd is not None:
+            try:
+                os.close(self.master_fd)
+            except OSError:
+                pass
+            self.master_fd = None
+
+        if target_pid is None:
+            self.pid = None
+            return None
+
+        # Try graceful termination first, then force kill if needed.
+        try:
+            os.kill(target_pid, signal.SIGHUP)
+        except ProcessLookupError:
+            pass
+        except OSError:
+            pass
+
+        for _ in range(20):
+            try:
+                pid_result, _ = os.waitpid(target_pid, os.WNOHANG)
+                if pid_result == target_pid:
+                    self.pid = None
+                    return target_pid
+            except ChildProcessError:
+                self.pid = None
+                return target_pid
+            except OSError:
+                pass
+            await asyncio.sleep(0.05)
+
+        try:
+            os.kill(target_pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        except OSError:
+            pass
+
+        for _ in range(20):
+            try:
+                pid_result, _ = os.waitpid(target_pid, os.WNOHANG)
+                if pid_result == target_pid:
+                    self.pid = None
+                    return target_pid
+            except ChildProcessError:
+                self.pid = None
+                return target_pid
+            except OSError:
+                pass
+            await asyncio.sleep(0.05)
+
+        # Last resort: block in a worker thread to reap defunct child reliably.
+        try:
+            await asyncio.wait_for(
+                asyncio.to_thread(os.waitpid, target_pid, 0),
+                timeout=2.0,
+            )
+        except (asyncio.TimeoutError, ChildProcessError, OSError):
+            pass
+
+        if self._read_task is not None:
+            self._read_task.cancel()
+            self._read_task = None
+
+        self.pid = None
+        return target_pid
 
 # import asyncio
 # import signal
