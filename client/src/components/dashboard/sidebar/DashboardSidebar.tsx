@@ -26,14 +26,10 @@ import {
   getDrawerSxTransitionMixin,
   getDrawerWidthTransitionMixin,
 } from "../mixins"
-import { useAppSelector, useAppDispatch } from "../../../app/hooks.ts"
-import {
-  selectUser,
-  clearUser,
-  selectPermissions,
-} from "../../../features/user/userSlice.ts"
+import { useAppSelector } from "../../../app/hooks.ts"
+
 import ExitToAppIcon from "@mui/icons-material/ExitToApp"
-import { AuthService } from "../../../api/index.ts"
+import { useAuth } from "@/hooks/useAuth/useAuth.ts"
 
 export type DashboardSidebarProps = {
   expanded?: boolean
@@ -48,13 +44,12 @@ export default function DashboardSidebar({
   disableCollapsibleSidebar = false,
   container,
 }: DashboardSidebarProps) {
-  const user = useAppSelector(selectUser)
-  const selectedPermissions = useAppSelector(selectPermissions)
+  const { logout, user, getPermissions } = useAuth()
   const permissions = React.useMemo(
-    () => selectedPermissions ?? [],
-    [selectedPermissions],
+    () => getPermissions ?? [],
+    [getPermissions],
   )
-  const dispatch = useAppDispatch()
+
   const theme = useTheme()
 
   const { pathname } = useLocation()
@@ -166,9 +161,9 @@ export default function DashboardSidebar({
               id="me"
               title={
                 user
-                  ? user.first_name
-                    ? user.first_name + " " + (user.last_name ?? "")
-                    : user.username
+                  ? user.user.first_name
+                    ? user.user.first_name + " " + (user.user.last_name ?? "")
+                    : user.user.username
                   : ""
               }
               icon={<PersonIcon />}
@@ -342,18 +337,9 @@ export default function DashboardSidebar({
               icon={<ExitToAppIcon />}
               // href="/logout"
               onClick={() => {
-                AuthService.logoutApiV1AuthLogoutPost()
-                  .then(() => {
-                    dispatch(clearUser())
-                    //  window.location.href = "/logout";
-                  })
-                  .catch((error: unknown) => {
-                    console.error("Logout failed:", error)
-                    // Optionally, you can still clear the user and redirect even if the API call fails
-                    dispatch(clearUser())
-                    //  window.location.href = "/logout";
-                  })
-                // window.location.href = "/logout";
+                void (async () => {
+                  await logout()
+                })()
               }}
               selected={true}
             />
@@ -367,7 +353,7 @@ export default function DashboardSidebar({
       isFullyExpanded,
       expandedItemIds,
       pathname,
-      dispatch,
+      logout,
       user,
       permissions,
       sensors,

@@ -1,8 +1,9 @@
 import React from "react"
 import { Routes, Route } from "react-router"
-import Loader from "../components/ui/loader/Loader"
-import { useAppSelector } from "../app/hooks"
-import { selectUser, selectPermissions } from "../features/user/userSlice"
+import Loader from "@/components/ui/loader/Loader"
+// import { useAppSelector } from "../app/hooks"
+// import { selectUser, selectPermissions } from "../features/user/userSlice"
+import { useAuth } from "@/hooks/useAuth/useAuth"
 
 const Layout = React.lazy(() => import("../pages/dashboard/layout/Layout"))
 const MainView = React.lazy(() => import("../pages/dashboard/main/MainView"))
@@ -23,8 +24,9 @@ const Manage = React.lazy(() => import("../pages/dashboard/manage"))
 const Status = React.lazy(() => import("../pages/dashboard/manage/status"))
 
 export default function DashboardRouter() {
-  const user = useAppSelector(selectUser)
-  const permissions = useAppSelector(selectPermissions)
+  // const user = useAppSelector(selectUser)
+  const { user, getPermissions } = useAuth()
+  const permissions = getPermissions
   return (
     <Routes>
       <Route
@@ -75,7 +77,7 @@ export default function DashboardRouter() {
           </React.Suspense>
         }
       />
-      {permissions?.includes("role:read") || user?.role?.id === 1 ? (
+      {permissions?.includes("role:read") || user?.user.role?.id === 1 ? (
         <Route
           path="/admin/roles"
           element={
@@ -85,7 +87,7 @@ export default function DashboardRouter() {
           }
         />
       ) : null}
-      {permissions?.includes("user:read") || user?.role?.id === 1 ? (
+      {permissions?.includes("user:read") || user?.user.role?.id === 1 ? (
         <Route
           path="/admin/users"
           element={
@@ -95,7 +97,7 @@ export default function DashboardRouter() {
           }
         />
       ) : null}
-      {permissions?.includes("terminal:read") || user?.role?.id === 1 ? (
+      {permissions?.includes("terminal:read") || user?.user.role?.id === 1 ? (
         <>
           <Route
             path="/manage/*"

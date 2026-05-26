@@ -1,10 +1,11 @@
-import React, { useEffect } from "react"
+import React from "react"
 import CssBaseline from "@mui/material/CssBaseline"
 import Loader from "./components/ui/loader/Loader"
-import { useAppDispatch, useAppSelector } from "./app/hooks"
-import { selectUser, setUser } from "./features/user/userSlice"
-import { AuthService } from "./api"
-// import { SocketProvider } from "./hooks/useSocket/SocketProvider";
+// import { useAppDispatch, useAppSelector } from "./app/hooks"
+// import { selectUser, setUser } from "./features/user/userSlice"
+// import { AuthService } from "./api"
+// // import { SocketProvider } from "./hooks/useSocket/SocketProvider";
+import { useAuth } from "./hooks/useAuth/useAuth"
 
 const AppTheme = React.lazy(() => import("./theme/AppTheme"))
 const DialogsProvider = React.lazy(
@@ -20,21 +21,22 @@ const SocketProvider = React.lazy(
 )
 
 export const App = () => {
-  const dispatch = useAppDispatch()
-  const user = useAppSelector(selectUser)
+  // const dispatch = useAppDispatch()
+  // const user = useAppSelector(selectUser)
+  const { user } = useAuth()
 
-  useEffect(() => {
-    if (!user) {
-      AuthService.readCurrentUserApiV1AuthMeGet()
-        .then(userData => {
-          dispatch(setUser(userData))
-        })
-        .catch((error: unknown) => {
-          // No current user
-          console.log("No current user:", error)
-        })
-    }
-  }, [user, dispatch])
+  // useEffect(() => {
+  //   if (!user) {
+  //     AuthService.readCurrentUserApiV1AuthMeGet()
+  //       .then(userData => {
+  //         dispatch(setUser(userData))
+  //       })
+  //       .catch((error: unknown) => {
+  //         // No current user
+  //         console.log("No current user:", error)
+  //       })
+  //   }
+  // }, [user, dispatch])
   return (
     <React.Suspense fallback={<Loader />}>
       <AppTheme>

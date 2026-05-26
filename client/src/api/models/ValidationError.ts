@@ -5,4 +5,6 @@ export type ValidationError = {
   loc: Array<string | number>
   msg: string
   type: string
+  input?: any
+  ctx?: Record<string, any>
 }

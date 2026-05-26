@@ -6,14 +6,26 @@ import { OpenAPI } from "../core/OpenAPI"
 import { request as __request } from "../core/request"
 export class DefaultService {
   /**
-   * Root
+   * Serve React
+   * Serve the React app for all unmatched routes (SPA catch-all)
+   * React Router will handle the routing on the client side
    * @returns any Successful Response
    * @throws ApiError
    */
-  public static rootGet(): CancelablePromise<any> {
+  public static serveReactPathParamGet({
+    pathParam,
+  }: {
+    pathParam: string
+  }): CancelablePromise<any> {
     return __request(OpenAPI, {
       method: "GET",
-      url: "/",
+      url: "/{path_param}",
+      path: {
+        path_param: pathParam,
+      },
+      errors: {
+        422: `Validation Error`,
+      },
     })
   }
 }

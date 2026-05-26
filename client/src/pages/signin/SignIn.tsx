@@ -1,6 +1,4 @@
 import * as React from "react"
-import { useAppDispatch } from "../../app/hooks"
-import { setUser } from "../../features/user/userSlice"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import Checkbox from "@mui/material/Checkbox"
@@ -22,7 +20,7 @@ import {
   SitemarkIcon,
 } from "../../components/signin/CustomIcons"
 import { useForm, Controller } from "react-hook-form"
-import { AuthService } from "../../api"
+import { useAuth } from "@/hooks/useAuth/useAuth"
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -67,7 +65,7 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }))
 
 export default function SignIn(props: { disableCustomTheme?: boolean }) {
-  const dispatch = useAppDispatch()
+  const { login } = useAuth()
 
   const { getValues, control } = useForm({
     defaultValues: {
@@ -79,20 +77,12 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
   const handleSubmit = React.useCallback(async () => {
     const { username, password } = getValues()
     try {
-      const token = await AuthService.loginApiV1AuthLoginPost({
-        formData: {
-          username,
-          password,
-        },
-      })
-      //set user in redux store
-      dispatch(setUser(token.user))
-      // window.location.reload();
+      await login(username, password)
     } catch (error: unknown) {
       alert("Login failed. Please check your credentials and try again.")
       console.error("Login error:", error)
     }
-  }, [getValues, dispatch])
+  }, [getValues, login])
 
   return (
     <AppTheme {...props}>

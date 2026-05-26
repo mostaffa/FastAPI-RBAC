@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"
 import { io } from "socket.io-client"
-import { useAppSelector, useAppDispatch } from "../../app/hooks"
-import {
-  selectUser,
-  selectPermissions,
-  addPermission,
-  removePermission,
-  setUser,
-} from "../../features/user/userSlice"
+import { useAppDispatch } from "../../app/hooks"
 import { setSensors } from "../../features/sensors/sensorsSlice"
 import SocketContext from "./SocketContext"
 import type { ReactNode } from "react"
@@ -16,6 +9,7 @@ import type { UserRead, RoleRead, PermissionRead, UserOut } from "../../api"
 import { rolesApiSlice } from "../../features/user/rolesApiSlice"
 import { usersApiSlice } from "../../features/user/usersApiSlice"
 import useNotifications from "../useNotifications/useNotifications"
+import { useAuth } from "../useAuth/useAuth"
 
 type SocketProviderProps = {
   children: ReactNode
@@ -73,9 +67,12 @@ export type SocketMessage =
 export const SocketProvider = ({ children }: SocketProviderProps) => {
   const dispatch = useAppDispatch()
   const WS_PATH = (import.meta.env.VITE_WS_PATH as string | undefined) ?? "/ws"
-  //   const WS_URL = import.meta.env.VITE_WS_URL || window.location.origin;
-  const user = useAppSelector(selectUser)
-  const permissions = useAppSelector(selectPermissions)
+  const { user, getPermissions, addPerm, removePerm, setCurrentUser } =
+    useAuth()
+  const permissions = React.useMemo(
+    () => getPermissions ?? [],
+    [getPermissions],
+  )
   const socketRef = useRef<Socket | null>(null)
   const [status, setStatus] = useState("disconnected")
   const [message, setMessage] = useState<SocketMessage | null>(null)
@@ -121,7 +118,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       setServerNotification(noti)
     })
 
-    if (permissions?.includes("sensors:read")) {
+    if (permissions.includes("sensors:read")) {
       socket.emit("sensor_list", { list: "all" })
     }
 
@@ -132,9 +129,6 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       socket.off("reconnect_attempt")
       socket.off("msg")
       socket.off("notification")
-      // socket?.disconnect();
-      // socketRef.current = null;
-      // console.log(`\u001b[31mSocket disconnected on cleanup\u001b[0m`);
     }
   }, [user, WS_PATH, permissions])
 
@@ -221,9 +215,11 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
               ),
             )
             if (
-              user.role?.id === (message.payload as { role: RoleRead }).role.id
+              user.user.role?.id ===
+              (message.payload as { role: RoleRead }).role.id
             ) {
-              dispatch(addPermission(permissionToAdd.name))
+              // dispatch(addPermission(permissionToAdd.name))
+              addPerm(permissionToAdd.name)
             }
             break
           }
@@ -245,9 +241,10 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
               ),
             )
             if (
-              user.role?.id === (message.payload as { role: RoleRead }).role.id
+              user.user.role?.id ===
+              (message.payload as { role: RoleRead }).role.id
             ) {
-              dispatch(removePermission(permissionToRemove.name))
+              removePerm(permissionToRemove.name)
             }
             break
           }
@@ -293,10 +290,11 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
               "permissions" in message.payload
             ) {
               const updatedUser = message.payload as UserOut
-              if (updatedUser.user.id === user.id) {
-                dispatch(setUser(updatedUser))
+              if (updatedUser.user.id === user.user.id) {
+                setCurrentUser(updatedUser)
+                // dispatch(setUser(updatedUser))
                 // if the role was changed, the socket must disconnected and reconnected again to the new updated role
-                if (updatedUser.user.role?.id !== user.role?.id) {
+                if (updatedUser.user.role?.id !== user.user.role?.id) {
                   reconnect()
                 }
               }
@@ -327,7 +325,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         }
       }
     }
-  }, [user, message, dispatch])
+  }, [user, message, dispatch, addPerm, removePerm, setCurrentUser])
 
   useEffect(() => {
     if (serverNotification) {

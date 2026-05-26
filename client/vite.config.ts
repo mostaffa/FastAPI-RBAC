@@ -6,6 +6,11 @@ import packageJson from "./package.json" with { type: "json" }
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(import.meta.dirname, "src"),
+    },
+  },
 
   server: {
     open: false,
@@ -30,6 +35,29 @@ export default defineConfig({
     sourcemap: false,
     outDir: "../backend/app/static",
     emptyOutDir: true,
+    cssMinify: "esbuild",
+    cssCodeSplit: true,
+    modulePreload: {
+      polyfill: false,
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router"],
+          mui: ["@mui/material", "@mui/icons-material", "@mui/system"],
+          redux: ["react-redux", "@reduxjs/toolkit"],
+        },
+      },
+    },
+    manifest: true,
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        passes: 2,
+      },
+    },
+    assetsInlineLimit: 0,
   },
   test: {
     root: import.meta.dirname,
