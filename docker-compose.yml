@@ -3,11 +3,11 @@ services:
     image: postgres:16-alpine
     container_name: fastapi_rbac_postgres
     env_file:
-      - ./backend/.env
+      - ./backend/postgres.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rbac -d rbac"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -21,7 +21,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      DATABASE_URL: postgresql://rbac:sudoAptUpdate@postgres:5432/rbac
+      POSTGRES_HOST: postgres
     depends_on:
       postgres:
         condition: service_healthy

@@ -54,7 +54,7 @@ typing-inspection
 typing_extensions
 urllib3
 uvicorn
-uvloop
+uvloop; platform_system != "Windows"
 watchfiles
 websockets
 
