@@ -13,7 +13,7 @@ from app.models.user import User
 from app.models.permission import Permission, RolePermission
 
 # load environment variables from .env file
-env_path = os.path.join(os.path.dirname(__file__), "../../.env")
+env_path = os.path.join(os.path.dirname(__file__), "../../../.env")
 load_dotenv(dotenv_path=env_path)
 
 # -------------------------------------------------------------------

@@ -4,9 +4,9 @@ from pathlib import Path
 from sqlmodel import Session, create_engine
 
 # Load environment variables from .env file
-env_path = Path(__file__).parent.parent.parent / ".env"
+env_path = Path(__file__).resolve().parents[3] / ".env"
 load_dotenv(dotenv_path=env_path)
-default_database_url = "postgresql://rf24:password@localhost/rf24"
+default_database_url = "postgresql://rbac:123456789@localhost/rbac"
 
 database_url_from_env = os.getenv("DATABASE_URL")
 postgres_user = os.getenv("POSTGRES_USER")

@@ -106,12 +106,12 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Create .env file
-cp example.env .env
+cp .env.example .env
 ```
 
 ### 2️⃣ Environment Configuration
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root by copying `.env.example`:
 
 ```env
 # Database

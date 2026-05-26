@@ -23,7 +23,7 @@ def get_engine():
 
 
 def load_env() -> None:
-    env_path = Path(__file__).resolve().parents[1] / ".env"
+    env_path = Path(__file__).resolve().parents[2] / ".env"
     if env_path.exists():
         load_dotenv(dotenv_path=env_path)
 

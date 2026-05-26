@@ -17,8 +17,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Load environment variables from backend/.env
-env_path = Path(__file__).resolve().parents[1] / ".env"
+# Load environment variables from the project root .env
+env_path = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(dotenv_path=env_path)
 
 database_url_from_env = os.getenv("DATABASE_URL")

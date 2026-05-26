@@ -3,7 +3,7 @@ services:
     image: postgres:16-alpine
     container_name: fastapi_rbac_postgres
     env_file:
-      - ./backend/.env
+      - ./.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,7 +19,7 @@ services:
       dockerfile: Dockerfile
     container_name: fastapi_rbac_api
     env_file:
-      - ./backend/.env
+      - ./.env
     environment:
       POSTGRES_HOST: postgres
     depends_on:
@@ -37,7 +37,7 @@ services:
     depends_on:
       - api
     ports:
-      - "8080:80"
+      - "${NGINX_PORT:-8080}:80"
     restart: unless-stopped
 
 volumes:

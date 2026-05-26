@@ -28,6 +28,7 @@ from dotenv import load_dotenv
 
 # Ensure the backend package is importable when running as a script
 BACKEND_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = BACKEND_ROOT.parent
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
@@ -79,7 +80,7 @@ def get_engine():
 
 def load_env() -> None:
     """Load environment variables from .env file."""
-    env_path = BACKEND_ROOT / ".env"
+    env_path = PROJECT_ROOT / ".env"
     if env_path.exists():
         load_dotenv(dotenv_path=env_path)
         print_info(f"Loaded environment from {env_path}")

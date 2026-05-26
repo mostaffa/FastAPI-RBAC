@@ -7,7 +7,7 @@ from app.db.session import engine
 from app.core.security import hash_password
 
 # Load environment variables from .env file
-env_path = os.path.join(os.path.dirname(__file__), "../../.env")
+env_path = os.path.join(os.path.dirname(__file__), "../../../.env")
 load_dotenv(dotenv_path=env_path)
 
 PERMISSIONS = [
