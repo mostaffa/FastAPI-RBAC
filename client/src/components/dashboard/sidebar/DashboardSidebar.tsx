@@ -23,6 +23,7 @@ import SettingsIcon from "@mui/icons-material/Settings"
 import TerminalIcon from "@mui/icons-material/Terminal"
 import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat"
 import MonitorIcon from "@mui/icons-material/Monitor"
+import ComputerIcon from "@mui/icons-material/Computer"
 import MemoryIcon from "@mui/icons-material/Memory"
 import StorageIcon from "@mui/icons-material/Storage"
 import DeveloperBoardIcon from "@mui/icons-material/DeveloperBoard"
@@ -337,6 +338,16 @@ export default function DashboardSidebar({
                         minWidth: 240,
                       }}
                     >
+                      <DashboardSidebarPageItem
+                        id={"system"}
+                        title={"System"}
+                        icon={<ComputerIcon />}
+                        href={"/manage/system/"}
+                        selected={
+                          !!matchPath("/manage/system", pathname) ||
+                          !!matchPath("/manage/system/", pathname)
+                        }
+                      />
                       <DashboardSidebarPageItem
                         id={"temperature"}
                         title={"Temperature"}

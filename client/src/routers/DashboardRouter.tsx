@@ -5,31 +5,34 @@ import Loader from "@/components/ui/loader/Loader"
 // import { selectUser, selectPermissions } from "../features/user/userSlice"
 import { useAuth } from "@/hooks/useAuth/useAuth"
 
-const Layout = React.lazy(() => import("../pages/dashboard/layout/Layout"))
-const MainView = React.lazy(() => import("../pages/dashboard/main/MainView"))
+const Layout = React.lazy(() => import("@/pages/dashboard/layout/Layout"))
+const MainView = React.lazy(() => import("@/pages/dashboard/main/MainView"))
 const Dialogs = React.lazy(
-  () => import("../pages/dashboard/notifications/Dialogs"),
+  () => import("@/pages/dashboard/notifications/Dialogs"),
 )
 const NotificationAlerts = React.lazy(
-  () => import("../pages/dashboard/notifications/NotificationAlerts"),
+  () => import("@/pages/dashboard/notifications/NotificationAlerts"),
 )
 
-const Roles = React.lazy(() => import("../pages/dashboard/admin/roles/Roles"))
-const Users = React.lazy(() => import("../pages/dashboard/admin/users/Users"))
+const Roles = React.lazy(() => import("@/pages/dashboard/admin/roles/Roles"))
+const Users = React.lazy(() => import("@/pages/dashboard/admin/users/Users"))
 const UserForm = React.lazy(
-  () => import("../pages/dashboard/admin/users/UserForm"),
+  () => import("@/pages/dashboard/admin/users/UserForm"),
 )
-const Sensors = React.lazy(() => import("../pages/dashboard/sensor/Sensor"))
-const Manage = React.lazy(() => import("../pages/dashboard/manage"))
+const Sensors = React.lazy(() => import("@/pages/dashboard/sensor/Sensor"))
+const Manage = React.lazy(() => import("@/pages/dashboard/manage"))
 const Temperature = React.lazy(
-  () => import("../pages/dashboard/manage/monitoring"),
+  () => import("@/pages/dashboard/manage/monitoring"),
 )
 const Memory = React.lazy(
-  () => import("../pages/dashboard/manage/monitoring/Memory"),
+  () => import("@/pages/dashboard/manage/monitoring/Memory"),
 )
-const Cpu = React.lazy(() => import("../pages/dashboard/manage/monitoring/Cpu"))
+const Cpu = React.lazy(() => import("@/pages/dashboard/manage/monitoring/Cpu"))
 const Disk = React.lazy(
-  () => import("../pages/dashboard/manage/monitoring/Disk"),
+  () => import("@/pages/dashboard/manage/monitoring/Disk"),
+)
+const SystemInfo = React.lazy(
+  () => import("@/pages/dashboard/sensors/SystemInfo"),
 )
 
 export default function DashboardRouter() {
@@ -120,6 +123,14 @@ export default function DashboardRouter() {
       ) : null}
       {permissions?.includes("sensors:read") || user?.user.role?.id === 1 ? (
         <>
+          <Route
+            path="/manage/system"
+            element={
+              <React.Suspense fallback={<Loader />}>
+                <SystemInfo />
+              </React.Suspense>
+            }
+          />
           <Route
             path="/manage/temperature"
             element={
