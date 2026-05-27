@@ -21,20 +21,65 @@ from app.services.sys_cmd import TerminalService
 terminal_manager = TerminalService()
 terminal_sessions: dict[str, TerminalService] = {}
 temparature_sessions: dict[str, int] = {}
+memory_sessions: dict[str, int] = {}
+cpu_sessions: dict[str, int] = {}
+disk_sessions: dict[str, int] = {}
 _temp_monitor_task: asyncio.Task[None] | None = None
 _temp_monitor_lock = asyncio.Lock()
+_memory_monitor_task: asyncio.Task[None] | None = None
+_memory_monitor_lock = asyncio.Lock()
+_cpu_monitor_task: asyncio.Task[None] | None = None
+_cpu_monitor_lock = asyncio.Lock()
+_disk_monitor_task: asyncio.Task[None] | None = None
+_disk_monitor_lock = asyncio.Lock()
 
 
-class _TempSubscribersEmitter:
+# class _TempSubscribersEmitter:
+#     async def emit(self, event: str, data: dict[str, Any]) -> None:
+#         subscribers = list(temparature_sessions.keys())
+#         if not subscribers:
+#             sensor_service.stop_temp_monitoring()
+#             return
+
+#         for subscriber_sid in subscribers:
+#             await cast(Any, sio).emit(event, data, room=subscriber_sid)
+
+# class _MemorySubscribersEmitter:
+#     async def emit(self, event: str, data: dict[str, Any]) -> None:
+#         subscribers = list(memory_sessions.keys())
+#         if not subscribers:
+#             sensor_service.stop_mem_monitoring()
+#             return
+
+#         for subscriber_sid in subscribers:
+#             await cast(Any, sio).emit(event, data, room=subscriber_sid)
+
+class _SubscribersEmitter():
+    def __init__(self, subscription_type: str):
+        self.subscription_type = subscription_type
     async def emit(self, event: str, data: dict[str, Any]) -> None:
-        subscribers = list(temparature_sessions.keys())
+        if self.subscription_type == "temperature":
+            subscribers = list(temparature_sessions.keys())
+        elif self.subscription_type == "memory":
+            subscribers = list(memory_sessions.keys())
+        elif self.subscription_type == "cpu":
+            subscribers = list(cpu_sessions.keys())
+        elif self.subscription_type == "disk":
+            subscribers = list(disk_sessions.keys())
+        else:
+            subscribers = []
         if not subscribers:
-            sensor_service.stop_temp_monitoring()
+            if self.subscription_type == "temperature":
+                sensor_service.stop_temp_monitoring()
+            elif self.subscription_type == "memory":
+                sensor_service.stop_mem_monitoring()
+            elif self.subscription_type == "cpu":
+                sensor_service.stop_cpu_monitoring()
+            elif self.subscription_type == "disk":
+                sensor_service.stop_disk_monitoring()
             return
-
         for subscriber_sid in subscribers:
             await cast(Any, sio).emit(event, data, room=subscriber_sid)
-# sensorService = SensorService()
 
 sio = socketio.AsyncServer(
     async_mode="asgi",
@@ -153,7 +198,7 @@ async def sensor_list(sid: str, message: dict[str, Any]):
 
 @socket_event
 async def disconnect(sid: str):
-    global _temp_monitor_task
+    global _temp_monitor_task, _memory_monitor_task, _cpu_monitor_task, _disk_monitor_task
 
     terminal = terminal_sessions.pop(sid, None)
 
@@ -166,6 +211,27 @@ async def disconnect(sid: str):
         async with _temp_monitor_lock:
             if _temp_monitor_task and not _temp_monitor_task.done():
                 _temp_monitor_task.cancel()
+
+    memory_sessions.pop(sid, None)
+    if not memory_sessions:
+        sensor_service.stop_mem_monitoring()
+        async with _memory_monitor_lock:
+            if _memory_monitor_task and not _memory_monitor_task.done():
+                _memory_monitor_task.cancel()
+
+    cpu_sessions.pop(sid, None)
+    if not cpu_sessions:
+        sensor_service.stop_cpu_monitoring()
+        async with _cpu_monitor_lock:
+            if _cpu_monitor_task and not _cpu_monitor_task.done():
+                _cpu_monitor_task.cancel()
+
+    disk_sessions.pop(sid, None)
+    if not disk_sessions:
+        sensor_service.stop_disk_monitoring()
+        async with _disk_monitor_lock:
+            if _disk_monitor_task and not _disk_monitor_task.done():
+                _disk_monitor_task.cancel()
 
     user_id = _sid_user.pop(sid, None)
     if user_id is None:
@@ -281,7 +347,7 @@ async def temp_realtime_start(sid: str, message: dict):
         async def _run_temp_monitor() -> None:
             global _temp_monitor_task
             try:
-                await sensor_service.start_temp_monitoring(_TempSubscribersEmitter())
+                await sensor_service.start_temp_monitoring(_SubscribersEmitter("temperature"))
             except asyncio.CancelledError:
                 # Task cancellation is expected when no sessions remain.
                 pass
@@ -299,6 +365,121 @@ async def temp_realtime_stop(sid: str, message: dict):
         async with _temp_monitor_lock:
             if _temp_monitor_task and not _temp_monitor_task.done():
                 _temp_monitor_task.cancel()
+
+@socket_event
+async def mem_realtime_start(sid: str, message: dict):
+    global _memory_monitor_task
+    user_id = _sid_user[sid]
+    if not _has_permission(user_id, "sensors:read"):
+        print(f"\u001b[31mUser {user_id} does not have permission to read sensors\u001b[0m")
+        await emit(event="error", data={
+            "code": 403,
+            "message": "You dont have permission to read Sensors"
+        }, room=sid)
+        return
+
+    memory_sessions[sid] = user_id
+    async with _memory_monitor_lock:
+        if _memory_monitor_task and not _memory_monitor_task.done():
+            return
+
+        async def _run_memory_monitor() -> None:
+            global _memory_monitor_task
+            try:
+                await sensor_service.start_mem_monitoring(_SubscribersEmitter("memory"))
+            except asyncio.CancelledError:
+                # Task cancellation is expected when no sessions remain.
+                pass
+            finally:
+                _memory_monitor_task = None
+
+        _memory_monitor_task = asyncio.create_task(_run_memory_monitor())
+
+@socket_event
+async def mem_realtime_stop(sid: str, message: dict):
+    global _memory_monitor_task
+    memory_sessions.pop(sid, None)
+    if not memory_sessions:
+        sensor_service.stop_mem_monitoring()
+        async with _memory_monitor_lock:
+            if _memory_monitor_task and not _memory_monitor_task.done():
+                _memory_monitor_task.cancel()
+
+@socket_event
+async def cpu_realtime_start(sid: str, message: dict):
+    global _cpu_monitor_task
+    user_id = _sid_user[sid]
+    if not _has_permission(user_id, "sensors:read"):
+        print(f"\u001b[31mUser {user_id} does not have permission to read sensors\u001b[0m")
+        await emit(event="error", data={
+            "code": 403,
+            "message": "You dont have permission to read Sensors"
+        }, room=sid)
+        return
+
+    cpu_sessions[sid] = user_id
+    async with _cpu_monitor_lock:
+        if _cpu_monitor_task and not _cpu_monitor_task.done():
+            return
+
+        async def _run_cpu_monitor() -> None:
+            global _cpu_monitor_task
+            try:
+                await sensor_service.start_cpu_monitoring(_SubscribersEmitter("cpu"))
+            except asyncio.CancelledError:
+                pass
+            finally:
+                _cpu_monitor_task = None
+
+        _cpu_monitor_task = asyncio.create_task(_run_cpu_monitor())
+
+@socket_event
+async def cpu_realtime_stop(sid: str, message: dict):
+    global _cpu_monitor_task
+    cpu_sessions.pop(sid, None)
+    if not cpu_sessions:
+        sensor_service.stop_cpu_monitoring()
+        async with _cpu_monitor_lock:
+            if _cpu_monitor_task and not _cpu_monitor_task.done():
+                _cpu_monitor_task.cancel()
+
+@socket_event
+async def disk_realtime_start(sid: str, message: dict):
+    global _disk_monitor_task
+    user_id = _sid_user[sid]
+    if not _has_permission(user_id, "sensors:read"):
+        print(f"\u001b[31mUser {user_id} does not have permission to read sensors\u001b[0m")
+        await emit(event="error", data={
+            "code": 403,
+            "message": "You dont have permission to read Sensors"
+        }, room=sid)
+        return
+
+    disk_sessions[sid] = user_id
+    async with _disk_monitor_lock:
+        if _disk_monitor_task and not _disk_monitor_task.done():
+            return
+
+        async def _run_disk_monitor() -> None:
+            global _disk_monitor_task
+            try:
+                await sensor_service.start_disk_monitoring(_SubscribersEmitter("disk"))
+            except asyncio.CancelledError:
+                pass
+            finally:
+                _disk_monitor_task = None
+
+        _disk_monitor_task = asyncio.create_task(_run_disk_monitor())
+
+@socket_event
+async def disk_realtime_stop(sid: str, message: dict):
+    global _disk_monitor_task
+    disk_sessions.pop(sid, None)
+    if not disk_sessions:
+        sensor_service.stop_disk_monitoring()
+        async with _disk_monitor_lock:
+            if _disk_monitor_task and not _disk_monitor_task.done():
+                _disk_monitor_task.cancel()
 
 async def broadcast(event: str, data: dict[str, Any]) -> None:
     await emit(event, data)

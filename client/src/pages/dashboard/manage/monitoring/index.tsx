@@ -123,7 +123,15 @@ export default function Temperature() {
           Temperature
         </Typography>
       </Grid>
-      <Grid container spacing={1} sx={{ mt: 2, border: `2px solid ${theme.palette.primary.main}`, borderRadius: 1 }}>
+      <Grid
+        container
+        spacing={1}
+        sx={{
+          mt: 2,
+          border: `2px solid ${theme.palette.primary.main}`,
+          borderRadius: 1,
+        }}
+      >
         {sensorNames.length === 0 ? (
           <Grid size={12}>
             <Paper elevation={1} sx={{ p: 2 }}>
@@ -154,7 +162,7 @@ export default function Temperature() {
                 ))}
               </Tabs>
 
-              <Grid container spacing={1} >
+              <Grid container spacing={1}>
                 {activeReadings.map(
                   ([label, current, high, critical], index) => {
                     const level = getTemperatureLevel(current, high, critical)
@@ -174,7 +182,11 @@ export default function Temperature() {
 
                     return (
                       <Grid
-                        size={{ xs: 12, md: index >= 2  ? 6 : 4, lg: index >= 2 ? 3 : 6 }}
+                        size={{
+                          xs: 12,
+                          md: index >= 2 ? 6 : 4,
+                          lg: index >= 2 ? 3 : 6,
+                        }}
                         key={`${activeSensorName}-${label || "unnamed"}-${String(index)}`}
                       >
                         <Grid

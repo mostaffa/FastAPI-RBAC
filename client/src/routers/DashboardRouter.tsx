@@ -21,7 +21,16 @@ const UserForm = React.lazy(
 )
 const Sensors = React.lazy(() => import("../pages/dashboard/sensor/Sensor"))
 const Manage = React.lazy(() => import("../pages/dashboard/manage"))
-const Temperature = React.lazy(() => import("../pages/dashboard/manage/status"))
+const Temperature = React.lazy(
+  () => import("../pages/dashboard/manage/monitoring"),
+)
+const Memory = React.lazy(
+  () => import("../pages/dashboard/manage/monitoring/Memory"),
+)
+const Cpu = React.lazy(() => import("../pages/dashboard/manage/monitoring/Cpu"))
+const Disk = React.lazy(
+  () => import("../pages/dashboard/manage/monitoring/Disk"),
+)
 
 export default function DashboardRouter() {
   // const user = useAppSelector(selectUser)
@@ -107,11 +116,39 @@ export default function DashboardRouter() {
               </React.Suspense>
             }
           />
+        </>
+      ) : null}
+      {permissions?.includes("sensors:read") || user?.user.role?.id === 1 ? (
+        <>
           <Route
             path="/manage/temperature"
             element={
               <React.Suspense fallback={<Loader />}>
                 <Temperature />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/manage/memory"
+            element={
+              <React.Suspense fallback={<Loader />}>
+                <Memory />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/manage/cpu"
+            element={
+              <React.Suspense fallback={<Loader />}>
+                <Cpu />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/manage/disk"
+            element={
+              <React.Suspense fallback={<Loader />}>
+                <Disk />
               </React.Suspense>
             }
           />

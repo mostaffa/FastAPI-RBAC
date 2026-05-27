@@ -22,6 +22,10 @@ import SensorsIcon from "@mui/icons-material/Sensors"
 import SettingsIcon from "@mui/icons-material/Settings"
 import TerminalIcon from "@mui/icons-material/Terminal"
 import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat"
+import MonitorIcon from "@mui/icons-material/Monitor"
+import MemoryIcon from "@mui/icons-material/Memory"
+import StorageIcon from "@mui/icons-material/Storage"
+import DeveloperBoardIcon from "@mui/icons-material/DeveloperBoard"
 import {
   getDrawerSxTransitionMixin,
   getDrawerWidthTransitionMixin,
@@ -266,13 +270,6 @@ export default function DashboardSidebar({
                         href={"/manage/terminal/"}
                         selected={!!matchPath("/manage/terminal/", pathname)}
                       />
-                      <DashboardSidebarPageItem
-                        id={"temperature"}
-                        title={"Temperature"}
-                        icon={<DeviceThermostatIcon />}
-                        href={"/manage/temperature/"}
-                        selected={!!matchPath("/manage/temperature/", pathname)}
-                      />
                     </List>
                   }
                 />
@@ -320,7 +317,57 @@ export default function DashboardSidebar({
                     />
                   </>
                 )}
-
+                <DashboardSidebarHeaderItem>
+                  Monitoring
+                </DashboardSidebarHeaderItem>
+                <DashboardSidebarPageItem
+                  id="monitoring"
+                  title={"Monitoring"}
+                  icon={<MonitorIcon />}
+                  selected={!!matchPath("/monitoring/*", pathname)}
+                  defaultExpanded={!!matchPath("/monitoring/", pathname)}
+                  expanded={expandedItemIds.includes("monitoring")}
+                  nestedNavigation={
+                    <List
+                      dense
+                      sx={{
+                        padding: 0,
+                        my: 1,
+                        pl: mini ? 0 : 1,
+                        minWidth: 240,
+                      }}
+                    >
+                      <DashboardSidebarPageItem
+                        id={"temperature"}
+                        title={"Temperature"}
+                        icon={<DeviceThermostatIcon />}
+                        href={"/manage/temperature/"}
+                        selected={!!matchPath("/manage/temperature/", pathname)}
+                      />
+                      <DashboardSidebarPageItem
+                        id={"memory"}
+                        title={"Memory"}
+                        icon={<MemoryIcon />}
+                        href={"/manage/memory/"}
+                        selected={!!matchPath("/manage/memory/", pathname)}
+                      />
+                      <DashboardSidebarPageItem
+                        id={"cpu"}
+                        title={"CPU"}
+                        icon={<DeveloperBoardIcon />}
+                        href={"/manage/cpu/"}
+                        selected={!!matchPath("/manage/cpu/", pathname)}
+                      />
+                      <DashboardSidebarPageItem
+                        id={"disk"}
+                        title={"Disk"}
+                        icon={<StorageIcon />}
+                        href={"/manage/disk/"}
+                        selected={!!matchPath("/manage/disk/", pathname)}
+                      />
+                    </List>
+                  }
+                ></DashboardSidebarPageItem>
                 {/* <DashboardSidebarPageItem
                 id="sensors"
                 title="Sensors"
