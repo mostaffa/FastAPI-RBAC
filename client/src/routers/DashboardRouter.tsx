@@ -21,7 +21,7 @@ const UserForm = React.lazy(
 )
 const Sensors = React.lazy(() => import("../pages/dashboard/sensor/Sensor"))
 const Manage = React.lazy(() => import("../pages/dashboard/manage"))
-const Status = React.lazy(() => import("../pages/dashboard/manage/status"))
+const Temperature = React.lazy(() => import("../pages/dashboard/manage/status"))
 
 export default function DashboardRouter() {
   // const user = useAppSelector(selectUser)
@@ -108,10 +108,10 @@ export default function DashboardRouter() {
             }
           />
           <Route
-            path="/manage/status"
+            path="/manage/temperature"
             element={
               <React.Suspense fallback={<Loader />}>
-                <Status />
+                <Temperature />
               </React.Suspense>
             }
           />

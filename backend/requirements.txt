@@ -57,4 +57,5 @@ uvicorn
 uvloop; platform_system != "Windows"
 watchfiles
 websockets
+psutil
 

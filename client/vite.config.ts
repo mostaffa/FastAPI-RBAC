@@ -16,15 +16,15 @@ export default defineConfig({
     open: false,
     port: 3000,
     host: "0.0.0.0",
-    allowedHosts: ["nest.mostafaothman.com"],
+    allowedHosts: ["nest.mostafaothman.com", "ubuntu26"],
     proxy: {
       "/api": {
-        target: "http://localhost:4000",
+        target: "http://localhost:4001",
         changeOrigin: true,
         secure: true,
       },
       "/ws": {
-        target: "ws://localhost:4000",
+        target: "ws://localhost:4001",
         changeOrigin: true,
         secure: true,
         ws: true,

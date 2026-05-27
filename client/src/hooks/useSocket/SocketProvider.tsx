@@ -47,21 +47,21 @@ export type ServerNotification = {
 }
 export type SocketMessage =
   | {
-    type: "notification"
-    payload: {
-      type: "error" | "info" | "success" | "warning"
-      code: number
-      message: string
+      type: "notification"
+      payload: {
+        type: "error" | "info" | "success" | "warning"
+        code: number
+        message: string
+      }
     }
-  }
   | { type: "user_created" | "user_updated"; payload: { user: UserRead } }
   | { type: "user_deleted"; payload: { user_id: number } }
   | { type: "role_created" | "role_updated"; payload: RoleRead }
   | { type: "role_deleted"; payload: { role_id: number } }
   | {
-    type: "role_permission_added" | "role_permission_removed"
-    payload: { role: RoleRead; permission: PermissionRead }
-  }
+      type: "role_permission_added" | "role_permission_removed"
+      payload: { role: RoleRead; permission: PermissionRead }
+    }
   | { type: "sensors"; payload: Record<string, [string]> }
 
 export const SocketProvider = ({ children }: SocketProviderProps) => {

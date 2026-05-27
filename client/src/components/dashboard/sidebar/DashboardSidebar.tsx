@@ -21,7 +21,7 @@ import GroupsIcon from "@mui/icons-material/Groups"
 import SensorsIcon from "@mui/icons-material/Sensors"
 import SettingsIcon from "@mui/icons-material/Settings"
 import TerminalIcon from "@mui/icons-material/Terminal"
-import AutorenewIcon from "@mui/icons-material/Autorenew"
+import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat"
 import {
   getDrawerSxTransitionMixin,
   getDrawerWidthTransitionMixin,
@@ -267,11 +267,11 @@ export default function DashboardSidebar({
                         selected={!!matchPath("/manage/terminal/", pathname)}
                       />
                       <DashboardSidebarPageItem
-                        id={"status"}
-                        title={"Status"}
-                        icon={<AutorenewIcon />}
-                        href={"/manage/status/"}
-                        selected={!!matchPath("/manage/status/", pathname)}
+                        id={"temperature"}
+                        title={"Temperature"}
+                        icon={<DeviceThermostatIcon />}
+                        href={"/manage/temperature/"}
+                        selected={!!matchPath("/manage/temperature/", pathname)}
                       />
                     </List>
                   }
