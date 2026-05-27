@@ -29,16 +29,16 @@ services:
       - "4000:4000"
     restart: unless-stopped
 
-  ui:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-    container_name: fastapi_rbac_ui
-    depends_on:
-      - api
-    ports:
-      - "${NGINX_PORT:-8080}:80"
-    restart: unless-stopped
+  # ui:
+  #   build:
+  #     context: ./client
+  #     dockerfile: Dockerfile
+  #   container_name: fastapi_rbac_ui
+  #   depends_on:
+  #     - api
+  #   ports:
+  #     - "${NGINX_PORT:-8080}:80"
+  #   restart: unless-stopped
 
 volumes:
   postgres_data:
