@@ -151,13 +151,14 @@ export default function Temperature() {
         })
 
         const incomingSensors = new Set(Object.keys(message.data))
-        Object.keys(nextHistory).forEach(sensorName => {
-          if (!incomingSensors.has(sensorName)) {
-            delete nextHistory[sensorName]
+        const filteredHistory: TemperatureHistoryBySensor = {}
+        Object.entries(nextHistory).forEach(([sensorName, history]) => {
+          if (incomingSensors.has(sensorName)) {
+            filteredHistory[sensorName] = history
           }
         })
 
-        return nextHistory
+        return filteredHistory
       })
     },
     [],

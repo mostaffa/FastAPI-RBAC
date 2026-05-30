@@ -62,7 +62,7 @@ export default function CpuChart({ data }: Props) {
           />
           <YAxis
             domain={[0, 100]}
-            tickFormatter={v => `${v}%`}
+            tickFormatter={value => String(value) + "%"}
             tick={{ fontSize: 11, fill: theme.palette.text.secondary }}
             tickLine={false}
             axisLine={false}
@@ -75,8 +75,12 @@ export default function CpuChart({ data }: Props) {
               borderRadius: 8,
               fontSize: 13,
             }}
-            formatter={(value: number) => [`${value.toFixed(1)}%`, "CPU"]}
-            labelFormatter={label => `Time: ${label}`}
+            formatter={value => {
+              const numericValue =
+                typeof value === "number" ? value : Number(value)
+              return [numericValue.toFixed(1) + "%", "CPU"]
+            }}
+            labelFormatter={label => "Time: " + String(label)}
           />
           <Area
             type="monotone"

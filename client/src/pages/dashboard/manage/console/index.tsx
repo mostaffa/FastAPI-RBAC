@@ -41,10 +41,8 @@ export default function Console() {
 
     if (cols <= 0 || rows <= 0) return
 
-    if (
-      lastResizeRef.current?.cols === cols &&
-      lastResizeRef.current?.rows === rows
-    ) {
+    const lastResize = lastResizeRef.current
+    if (lastResize?.cols === cols && lastResize.rows === rows) {
       return
     }
 
@@ -99,10 +97,8 @@ export default function Console() {
   }, [socket])
 
   const onResize = useCallback((cols: number, rows: number) => {
-    if (
-      lastResizeRef.current?.cols === cols &&
-      lastResizeRef.current?.rows === rows
-    ) {
+    const lastResize = lastResizeRef.current
+    if (lastResize?.cols === cols && lastResize.rows === rows) {
       return
     }
 

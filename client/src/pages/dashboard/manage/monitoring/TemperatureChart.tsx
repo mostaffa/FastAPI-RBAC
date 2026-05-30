@@ -90,7 +90,7 @@ export default function TemperatureChart({ data }: Props) {
           />
           <YAxis
             domain={[yMin, yMax]}
-            tickFormatter={v => `${v}°C`}
+            tickFormatter={value => String(value) + "°C"}
             tick={{ fontSize: 11, fill: theme.palette.text.secondary }}
             tickLine={false}
             axisLine={false}
@@ -123,11 +123,16 @@ export default function TemperatureChart({ data }: Props) {
               borderRadius: 8,
               fontSize: 13,
             }}
-            formatter={(value: number, name: string) => {
-              if (name === "current") return [`${value.toFixed(1)}°C`, "Current"]
-              return [String(value), name]
+            formatter={(value, name) => {
+              const normalizedName = String(name ?? "")
+              const numericValue =
+                typeof value === "number" ? value : Number(value)
+              if (normalizedName === "current") {
+                return [numericValue.toFixed(1) + "°C", "Current"]
+              }
+              return [String(value), normalizedName]
             }}
-            labelFormatter={label => `Time: ${label}`}
+            labelFormatter={label => "Time: " + String(label)}
           />
           <Area
             type="monotone"
