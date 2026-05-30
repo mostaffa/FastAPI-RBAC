@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Container from "@mui/material/Container"
 import Paper from "@mui/material/Paper"
 import Grid from "@mui/material/Grid"
@@ -10,8 +10,12 @@ import type {
   SensorsTemperaturesResponse,
 } from "@/utils/types"
 import { Box, Chip, Divider, LinearProgress, Tab, Tabs } from "@mui/material"
+import TemperatureChart, { type TemperatureDataPoint } from "./TemperatureChart"
+
+const MAX_HISTORY = 60
 
 type TemperatureLevel = "normal" | "middle" | "warning" | "error"
+type TemperatureHistoryBySensor = Record<string, TemperatureDataPoint[]>
 
 function getThresholds(high: number | null, critical: number | null) {
   if (critical !== null) {
@@ -60,19 +64,107 @@ function getLevelLabel(level: TemperatureLevel) {
   return "Normal"
 }
 
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+}
+
+function normalizeTempValue(value: number): number {
+  // Some sensors may report milli-degrees C (e.g. 32680 => 32.68 C).
+  return value > 1000 ? value / 1000 : value
+}
+
+function summarizeSensorReadings(
+  readings: SensorsTemperaturesData[string] | undefined,
+): Omit<TemperatureDataPoint, "time"> | null {
+  if (!readings || readings.length === 0) return null
+
+  const normalizedCurrentValues = readings.map(([, current]) =>
+    normalizeTempValue(current),
+  )
+  const currentAverage =
+    normalizedCurrentValues.reduce((sum, value) => sum + value, 0) /
+    normalizedCurrentValues.length
+
+  const highs = readings
+    .map(([, , high]) => (high !== null ? normalizeTempValue(high) : null))
+    .filter((high): high is number => high !== null)
+  const criticals = readings
+    .map(([, , , critical]) =>
+      critical !== null ? normalizeTempValue(critical) : null,
+    )
+    .filter((critical): critical is number => critical !== null)
+
+  const avgHigh =
+    highs.length > 0
+      ? highs.reduce((sum, value) => sum + value, 0) / highs.length
+      : null
+  const avgCritical =
+    criticals.length > 0
+      ? criticals.reduce((sum, value) => sum + value, 0) / criticals.length
+      : null
+
+  return {
+    current: Number(currentAverage.toFixed(2)),
+    high: avgHigh !== null ? Number(avgHigh.toFixed(2)) : null,
+    critical: avgCritical !== null ? Number(avgCritical.toFixed(2)) : null,
+  }
+}
+
 export default function Temperature() {
   const { socket } = useSocket()
   const theme = useTheme()
   const [temperatureData, setTemperatureData] =
     useState<SensorsTemperaturesData>({})
+  const [historyBySensor, setHistoryBySensor] =
+    useState<TemperatureHistoryBySensor>({})
   const [activeSensor, setActiveSensor] = useState("")
+
+  const handleTemperatureMessage = useCallback(
+    (message: SensorsTemperaturesResponse) => {
+      setTemperatureData(message.data)
+
+      setHistoryBySensor(prev => {
+        const timestamp = formatTime(new Date())
+        const nextHistory: TemperatureHistoryBySensor = { ...prev }
+
+        Object.entries(message.data).forEach(([sensorName, readings]) => {
+          const summary = summarizeSensorReadings(readings)
+          if (!summary) return
+
+          const point: TemperatureDataPoint = {
+            time: timestamp,
+            current: summary.current,
+            high: summary.high,
+            critical: summary.critical,
+          }
+
+          const previousSeries = nextHistory[sensorName] ?? []
+          const updatedSeries = [...previousSeries, point]
+          nextHistory[sensorName] =
+            updatedSeries.length > MAX_HISTORY
+              ? updatedSeries.slice(updatedSeries.length - MAX_HISTORY)
+              : updatedSeries
+        })
+
+        const incomingSensors = new Set(Object.keys(message.data))
+        Object.keys(nextHistory).forEach(sensorName => {
+          if (!incomingSensors.has(sensorName)) {
+            delete nextHistory[sensorName]
+          }
+        })
+
+        return nextHistory
+      })
+    },
+    [],
+  )
 
   useEffect(() => {
     if (!socket) return
-
-    const handleTemperatureMessage = (message: SensorsTemperaturesResponse) => {
-      setTemperatureData(message.data)
-    }
 
     const startRealtime = () => {
       socket.emit("temp_realtime_start", null)
@@ -90,7 +182,7 @@ export default function Temperature() {
       socket.off("temp_realtime", handleTemperatureMessage)
       socket.off("connect", startRealtime)
     }
-  }, [socket])
+  }, [socket, handleTemperatureMessage])
 
   const sensorNames = Object.keys(temperatureData)
 
@@ -111,6 +203,10 @@ export default function Temperature() {
   const activeReadings = activeSensorName
     ? temperatureData[activeSensorName]
     : []
+  const activeHistory = useMemo(
+    () => historyBySensor[activeSensorName] ?? [],
+    [historyBySensor, activeSensorName],
+  )
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
@@ -162,6 +258,13 @@ export default function Temperature() {
                 ))}
               </Tabs>
 
+              <Paper elevation={1} sx={{ p: 2, mb: 2 }}>
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  Usage History
+                </Typography>
+                <TemperatureChart data={activeHistory} />
+              </Paper>
+
               <Grid container spacing={1}>
                 {activeReadings.map(
                   ([label, current, high, critical], index) => {
@@ -177,7 +280,7 @@ export default function Temperature() {
                         : level === "warning"
                           ? theme.palette.warning.main
                           : level === "middle"
-                            ? "#f9a825"
+                            ? theme.palette.grey[700]
                             : theme.palette.info.main
 
                     return (
@@ -195,8 +298,6 @@ export default function Temperature() {
                           sx={{
                             p: 1.5,
                             border: `2px solid ${levelColor}`,
-                            backgroundColor: theme.palette.background.default,
-                            color: theme.palette.text.primary,
                             height: "100%",
                           }}
                         >

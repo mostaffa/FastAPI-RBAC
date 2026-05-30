@@ -31,9 +31,30 @@ export default function Console() {
     }
   }, [])
 
-  const handleWindowResize = useCallback(() => {
+  const fitAndEmitResize = useCallback(() => {
     fitAddonRef.current?.fit()
-  }, [])
+
+    if (!socket || !xtermRef.current) return
+
+    const cols = xtermRef.current.cols
+    const rows = xtermRef.current.rows
+
+    if (cols <= 0 || rows <= 0) return
+
+    if (
+      lastResizeRef.current?.cols === cols &&
+      lastResizeRef.current?.rows === rows
+    ) {
+      return
+    }
+
+    lastResizeRef.current = { cols, rows }
+    socket.emit("terminal_resize", { cols, rows })
+  }, [socket])
+
+  const handleWindowResize = useCallback(() => {
+    fitAndEmitResize()
+  }, [fitAndEmitResize])
 
   const initializeTerminal = useCallback(() => {
     xtermRef.current = new Terminal({
@@ -77,31 +98,25 @@ export default function Console() {
     socket.emit("start_terminal", null)
   }, [socket])
 
-  const onResize = useCallback(
-    (cols: number, rows: number) => {
-      if (!lastResizeRef.current) {
-        lastResizeRef.current = { cols, rows }
-        return
-      }
-      if (
-        lastResizeRef.current.cols === cols &&
-        lastResizeRef.current.rows === rows
-      ) {
-        return
-      }
+  const onResize = useCallback((cols: number, rows: number) => {
+    if (
+      lastResizeRef.current?.cols === cols &&
+      lastResizeRef.current?.rows === rows
+    ) {
+      return
+    }
 
-      if (resizeFrameRef.current) {
-        cancelAnimationFrame(resizeFrameRef.current)
-      }
+    if (resizeFrameRef.current) {
+      cancelAnimationFrame(resizeFrameRef.current)
+    }
 
-      resizeFrameRef.current = requestAnimationFrame(() => {
-        if (!socket) return
-        lastResizeRef.current = { cols, rows }
-        socket.emit("terminal_resize", { cols, rows })
-      })
-    },
-    [socket],
-  )
+    resizeFrameRef.current = requestAnimationFrame(() => {
+      if (!socket) return
+      if (cols <= 0 || rows <= 0) return
+      lastResizeRef.current = { cols, rows }
+      socket.emit("terminal_resize", { cols, rows })
+    })
+  }, [socket])
 
   useEffect(() => {
     if (!xtermRef.current) {
@@ -131,6 +146,11 @@ export default function Console() {
       onResize(cols, rows)
     })
 
+    // Fit and send an initial terminal size once listeners are attached.
+    requestAnimationFrame(() => {
+      fitAndEmitResize()
+    })
+
     window.addEventListener("resize", handleWindowResize)
 
     return () => {
@@ -158,6 +178,7 @@ export default function Console() {
     initializeTerminal,
     onResize,
     requestStartTerminal,
+    fitAndEmitResize,
   ])
 
   return (

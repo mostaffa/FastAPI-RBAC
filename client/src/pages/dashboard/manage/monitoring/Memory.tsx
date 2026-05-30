@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Container from "@mui/material/Container"
 import Paper from "@mui/material/Paper"
 import Grid from "@mui/material/Grid"
@@ -7,6 +7,9 @@ import useSocket from "@/hooks/useSocket/useSocket"
 import { useTheme } from "@mui/material/styles"
 import type { MemoryRealtimeResponse, MemoryStats } from "@/utils/types"
 import { Box, LinearProgress } from "@mui/material"
+import MemoryChart, { type MemoryDataPoint } from "./MemoryChart"
+
+const MAX_HISTORY = 60
 
 const EMPTY_MEMORY: MemoryStats = {
   total: 0,
@@ -42,17 +45,36 @@ function usageColor(percent: number): string {
   return "#1565c0"
 }
 
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+}
+
 export default function Memory() {
   const theme = useTheme()
   const { socket } = useSocket()
   const [memory, setMemory] = useState<MemoryStats>(EMPTY_MEMORY)
+  const [history, setHistory] = useState<MemoryDataPoint[]>([])
+  const historyRef = useRef<MemoryDataPoint[]>([])
+
+  const handleMemoryData = useCallback((payload: MemoryRealtimeResponse) => {
+    setMemory(payload.data)
+    const point: MemoryDataPoint = {
+      time: formatTime(new Date()),
+      percent: Math.min(Math.max(payload.data.percent, 0), 100),
+    }
+    const next = [...historyRef.current, point]
+    const trimmed =
+      next.length > MAX_HISTORY ? next.slice(next.length - MAX_HISTORY) : next
+    historyRef.current = trimmed
+    setHistory(trimmed)
+  }, [])
 
   useEffect(() => {
     if (!socket) return
-
-    const handleMemoryData = (payload: MemoryRealtimeResponse) => {
-      setMemory(payload.data)
-    }
 
     const startRealtime = () => {
       socket.emit("mem_realtime_start", null)
@@ -70,7 +92,7 @@ export default function Memory() {
       socket.off("mem_realtime", handleMemoryData)
       socket.off("connect", startRealtime)
     }
-  }, [socket])
+  }, [socket, handleMemoryData])
 
   const usagePercent = useMemo(() => {
     if (memory.total <= 0) return 0
@@ -140,6 +162,15 @@ export default function Memory() {
                 {`${usagePercent.toFixed(1)}%`}
               </Typography>
             </Box>
+          </Paper>
+        </Grid>
+
+        <Grid size={12}>
+          <Paper elevation={3} sx={{ p: 2 }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Usage History
+            </Typography>
+            <MemoryChart data={history} />
           </Paper>
         </Grid>
 

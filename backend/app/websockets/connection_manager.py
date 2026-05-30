@@ -342,17 +342,20 @@ async def temp_realtime_start(sid: str, message: dict):
 
     async with _temp_monitor_lock:
         if _temp_monitor_task and not _temp_monitor_task.done():
-            return
+            if sensor_service.temp_realtime:
+                return
 
         async def _run_temp_monitor() -> None:
             global _temp_monitor_task
+            this_task = asyncio.current_task()
             try:
                 await sensor_service.start_temp_monitoring(_SubscribersEmitter("temperature"))
             except asyncio.CancelledError:
                 # Task cancellation is expected when no sessions remain.
                 pass
             finally:
-                _temp_monitor_task = None
+                if _temp_monitor_task is this_task:
+                    _temp_monitor_task = None
 
         _temp_monitor_task = asyncio.create_task(_run_temp_monitor())
 
@@ -381,17 +384,20 @@ async def mem_realtime_start(sid: str, message: dict):
     memory_sessions[sid] = user_id
     async with _memory_monitor_lock:
         if _memory_monitor_task and not _memory_monitor_task.done():
-            return
+            if sensor_service.mem_realtime:
+                return
 
         async def _run_memory_monitor() -> None:
             global _memory_monitor_task
+            this_task = asyncio.current_task()
             try:
                 await sensor_service.start_mem_monitoring(_SubscribersEmitter("memory"))
             except asyncio.CancelledError:
                 # Task cancellation is expected when no sessions remain.
                 pass
             finally:
-                _memory_monitor_task = None
+                if _memory_monitor_task is this_task:
+                    _memory_monitor_task = None
 
         _memory_monitor_task = asyncio.create_task(_run_memory_monitor())
 
@@ -420,16 +426,19 @@ async def cpu_realtime_start(sid: str, message: dict):
     cpu_sessions[sid] = user_id
     async with _cpu_monitor_lock:
         if _cpu_monitor_task and not _cpu_monitor_task.done():
-            return
+            if sensor_service.cpu_realtime:
+                return
 
         async def _run_cpu_monitor() -> None:
             global _cpu_monitor_task
+            this_task = asyncio.current_task()
             try:
                 await sensor_service.start_cpu_monitoring(_SubscribersEmitter("cpu"))
             except asyncio.CancelledError:
                 pass
             finally:
-                _cpu_monitor_task = None
+                if _cpu_monitor_task is this_task:
+                    _cpu_monitor_task = None
 
         _cpu_monitor_task = asyncio.create_task(_run_cpu_monitor())
 
@@ -458,16 +467,19 @@ async def disk_realtime_start(sid: str, message: dict):
     disk_sessions[sid] = user_id
     async with _disk_monitor_lock:
         if _disk_monitor_task and not _disk_monitor_task.done():
-            return
+            if sensor_service.disk_realtime:
+                return
 
         async def _run_disk_monitor() -> None:
             global _disk_monitor_task
+            this_task = asyncio.current_task()
             try:
                 await sensor_service.start_disk_monitoring(_SubscribersEmitter("disk"))
             except asyncio.CancelledError:
                 pass
             finally:
-                _disk_monitor_task = None
+                if _disk_monitor_task is this_task:
+                    _disk_monitor_task = None
 
         _disk_monitor_task = asyncio.create_task(_run_disk_monitor())
 
@@ -516,16 +528,5 @@ class ConnectionManager:
     
     async def disconnect(self, websocket: WebSocket):
         pass
-
-@sio.on("disconnect")
-async def handle_disconnect(sid: str):
-    # This is CRITICAL on Termux to prevent your phone 
-    # from heating up with 100 hidden bash processes
-    if terminal_manager.pid:
-        try:
-            os.kill(terminal_manager.pid, signal.SIGKILL)
-            print(f"Terminated Termux shell for {sid}")
-        except:
-            pass
 
 manager = ConnectionManager()

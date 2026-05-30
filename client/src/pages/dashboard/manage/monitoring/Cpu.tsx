@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Container from "@mui/material/Container"
 import Paper from "@mui/material/Paper"
 import Grid from "@mui/material/Grid"
@@ -7,6 +7,9 @@ import useSocket from "@/hooks/useSocket/useSocket"
 import { useTheme } from "@mui/material/styles"
 import type { CpuRealtimeResponse, CpuStats } from "@/utils/types"
 import { Box, LinearProgress } from "@mui/material"
+import CpuChart, { type CpuDataPoint } from "./CpuChart"
+
+const MAX_HISTORY = 60
 
 const EMPTY_CPU: CpuStats = {
   percent: 0,
@@ -29,17 +32,36 @@ function formatMhz(value: number | null): string {
   return value.toFixed(0) + " MHz"
 }
 
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+}
+
 export default function Cpu() {
   const theme = useTheme()
   const { socket } = useSocket()
   const [cpu, setCpu] = useState<CpuStats>(EMPTY_CPU)
+  const [history, setHistory] = useState<CpuDataPoint[]>([])
+  const historyRef = useRef<CpuDataPoint[]>([])
+
+  const handleCpuData = useCallback((payload: CpuRealtimeResponse) => {
+    setCpu(payload.data)
+    const point: CpuDataPoint = {
+      time: formatTime(new Date()),
+      percent: Math.min(Math.max(payload.data.percent, 0), 100),
+    }
+    const next = [...historyRef.current, point]
+    const trimmed =
+      next.length > MAX_HISTORY ? next.slice(next.length - MAX_HISTORY) : next
+    historyRef.current = trimmed
+    setHistory(trimmed)
+  }, [])
 
   useEffect(() => {
     if (!socket) return
-
-    const handleCpuData = (payload: CpuRealtimeResponse) => {
-      setCpu(payload.data)
-    }
 
     const startRealtime = () => {
       socket.emit("cpu_realtime_start", null)
@@ -57,7 +79,7 @@ export default function Cpu() {
       socket.off("cpu_realtime", handleCpuData)
       socket.off("connect", startRealtime)
     }
-  }, [socket])
+  }, [socket, handleCpuData])
 
   const usagePercent = useMemo(
     () => Math.min(Math.max(cpu.percent, 0), 100),
@@ -89,6 +111,7 @@ export default function Cpu() {
       </Grid>
 
       <Grid container spacing={1} sx={{ mt: 2 }}>
+        {/* Live usage bar */}
         <Grid size={12}>
           <Paper elevation={3} sx={{ p: 2 }}>
             <Typography variant="h6" sx={{ mb: 1 }}>
@@ -124,6 +147,17 @@ export default function Cpu() {
           </Paper>
         </Grid>
 
+        {/* Historical area chart */}
+        <Grid size={12}>
+          <Paper elevation={3} sx={{ p: 2 }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Usage History
+            </Typography>
+            <CpuChart data={history} />
+          </Paper>
+        </Grid>
+
+        {/* Stat cards */}
         {stats.map(item => (
           <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.label}>
             <Paper elevation={2} sx={{ p: 2, height: "100%" }}>
