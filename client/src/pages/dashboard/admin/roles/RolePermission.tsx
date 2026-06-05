@@ -13,6 +13,7 @@ import Paper from "@mui/material/Paper"
 import Typography from "@mui/material/Typography"
 import InputLabel from "@mui/material/InputLabel"
 import Checkbox from "@mui/material/Checkbox"
+import Button from "@mui/material/Button"
 import Loader from "../../../../components/ui/loader/Loader"
 import useNotifications from "../../../../hooks/useNotifications/useNotifications"
 // import useSocket from "../../../../hooks/useSocket/useSocket"
@@ -138,6 +139,14 @@ const RolePermission: React.FC<{ roleId: number }> = ({ roleId }) => {
     }
   }, [allPermissions])
 
+  const servicesUpdatePermission =
+    allPermissions?.find(permission => permission.name === "services:update") ??
+    null
+  const roleHasServicesUpdate =
+    servicesUpdatePermission !== null &&
+    (rolePermissions?.some(rp => rp.id === servicesUpdatePermission.id) ??
+      false)
+
   if (isRolePermissionsLoading || isAllPermissionsLoading) {
     return <Loader />
   }
@@ -145,6 +154,35 @@ const RolePermission: React.FC<{ roleId: number }> = ({ roleId }) => {
   return (
     <Grid maxWidth={"xl"} p={1}>
       <Grid>
+        <Paper elevation={1} sx={{ p: 1.5, mb: 1.5 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Quick Actions
+          </Typography>
+          {servicesUpdatePermission ? (
+            <Button
+              size="small"
+              variant={roleHasServicesUpdate ? "outlined" : "contained"}
+              color={roleHasServicesUpdate ? "warning" : "primary"}
+              disabled={disabled}
+              onClick={() => {
+                void (async () => {
+                  await handleChange(
+                    !roleHasServicesUpdate,
+                    servicesUpdatePermission,
+                  )
+                })()
+              }}
+            >
+              {roleHasServicesUpdate
+                ? "Revoke services:update"
+                : "Grant services:update"}
+            </Button>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              services:update permission not found in database.
+            </Typography>
+          )}
+        </Paper>
         {/* <Typography variant="h6">Permissions</Typography> */}
         <Grid sx={{ p: 1 }} container spacing={1}>
           {Object.entries(groupedPermissions).map(([group, permissions]) => (

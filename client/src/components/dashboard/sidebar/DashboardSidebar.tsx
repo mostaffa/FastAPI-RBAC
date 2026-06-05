@@ -27,6 +27,7 @@ import ComputerIcon from "@mui/icons-material/Computer"
 import MemoryIcon from "@mui/icons-material/Memory"
 import StorageIcon from "@mui/icons-material/Storage"
 import DeveloperBoardIcon from "@mui/icons-material/DeveloperBoard"
+import MiscellaneousServicesIcon from "@mui/icons-material/MiscellaneousServices"
 import {
   getDrawerSxTransitionMixin,
   getDrawerWidthTransitionMixin,
@@ -325,8 +326,8 @@ export default function DashboardSidebar({
                   id="monitoring"
                   title={"Monitoring"}
                   icon={<MonitorIcon />}
-                  selected={!!matchPath("/monitoring/*", pathname)}
-                  defaultExpanded={!!matchPath("/monitoring/", pathname)}
+                  selected={!!matchPath("/manage/*", pathname)}
+                  defaultExpanded={!!matchPath("/manage/", pathname)}
                   expanded={expandedItemIds.includes("monitoring")}
                   nestedNavigation={
                     <List
@@ -338,54 +339,71 @@ export default function DashboardSidebar({
                         minWidth: 240,
                       }}
                     >
-                      <DashboardSidebarPageItem
-                        id={"system"}
-                        title={"System"}
-                        icon={<ComputerIcon />}
-                        href={"/manage/system/"}
-                        selected={
-                          !!matchPath("/manage/system", pathname) ||
-                          !!matchPath("/manage/system/", pathname)
-                        }
-                      />
-                      <DashboardSidebarPageItem
-                        id={"temperature"}
-                        title={"Temperature"}
-                        icon={<DeviceThermostatIcon />}
-                        href={"/manage/temperature/"}
-                        selected={!!matchPath("/manage/temperature/", pathname)}
-                      />
-                      <DashboardSidebarPageItem
-                        id={"memory"}
-                        title={"Memory"}
-                        icon={<MemoryIcon />}
-                        href={"/manage/memory/"}
-                        selected={!!matchPath("/manage/memory/", pathname)}
-                      />
-                      <DashboardSidebarPageItem
-                        id={"cpu"}
-                        title={"CPU"}
-                        icon={<DeveloperBoardIcon />}
-                        href={"/manage/cpu/"}
-                        selected={!!matchPath("/manage/cpu/", pathname)}
-                      />
-                      <DashboardSidebarPageItem
-                        id={"disk"}
-                        title={"Disk"}
-                        icon={<StorageIcon />}
-                        href={"/manage/disk/"}
-                        selected={!!matchPath("/manage/disk/", pathname)}
-                      />
+                      {permissions.includes("sensors:read") && (
+                        <>
+                          <DashboardSidebarPageItem
+                            id={"system"}
+                            title={"System"}
+                            icon={<ComputerIcon />}
+                            href={"/manage/system/"}
+                            selected={
+                              !!matchPath("/manage/system", pathname) ||
+                              !!matchPath("/manage/system/", pathname)
+                            }
+                          />
+                          <DashboardSidebarPageItem
+                            id={"temperature"}
+                            title={"Temperature"}
+                            icon={<DeviceThermostatIcon />}
+                            href={"/manage/temperature/"}
+                            selected={
+                              !!matchPath("/manage/temperature/", pathname)
+                            }
+                          />
+                          <DashboardSidebarPageItem
+                            id={"memory"}
+                            title={"Memory"}
+                            icon={<MemoryIcon />}
+                            href={"/manage/memory/"}
+                            selected={!!matchPath("/manage/memory/", pathname)}
+                          />
+                          <DashboardSidebarPageItem
+                            id={"cpu"}
+                            title={"CPU"}
+                            icon={<DeveloperBoardIcon />}
+                            href={"/manage/cpu/"}
+                            selected={!!matchPath("/manage/cpu/", pathname)}
+                          />
+                          <DashboardSidebarPageItem
+                            id={"disk"}
+                            title={"Disk"}
+                            icon={<StorageIcon />}
+                            href={"/manage/disk/"}
+                            selected={!!matchPath("/manage/disk/", pathname)}
+                          />
+                        </>
+                      )}
                     </List>
                   }
                 ></DashboardSidebarPageItem>
-                {/* <DashboardSidebarPageItem
-                id="sensors"
-                title="Sensors"
-                icon={<SensorsIcon />}
-                href="/sensors"
-                selected={!!matchPath("/sensors", pathname)}
-              /> */}
+                <DashboardSidebarDividerItem />
+              </>
+            )}
+            {permissions.includes("services:read") && (
+              <>
+                <DashboardSidebarHeaderItem>
+                  Services
+                </DashboardSidebarHeaderItem>
+                <DashboardSidebarPageItem
+                  id="services"
+                  title="Services"
+                  icon={<MiscellaneousServicesIcon />}
+                  href="/services"
+                  selected={
+                    !!matchPath("/services", pathname) ||
+                    !!matchPath("/services/", pathname)
+                  }
+                />
                 <DashboardSidebarDividerItem />
               </>
             )}

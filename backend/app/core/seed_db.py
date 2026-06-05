@@ -26,6 +26,10 @@ PERMISSIONS = [
     "permission:read",
     "permission:update",
     "permission:delete",
+    "sensors:read",
+    "terminal:read",
+    "services:read",
+    "services:update",
 ]
 
 def seed_permissions():

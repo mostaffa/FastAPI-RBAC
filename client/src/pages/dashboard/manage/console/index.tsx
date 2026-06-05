@@ -96,23 +96,26 @@ export default function Console() {
     socket.emit("start_terminal", null)
   }, [socket])
 
-  const onResize = useCallback((cols: number, rows: number) => {
-    const lastResize = lastResizeRef.current
-    if (lastResize?.cols === cols && lastResize.rows === rows) {
-      return
-    }
+  const onResize = useCallback(
+    (cols: number, rows: number) => {
+      const lastResize = lastResizeRef.current
+      if (lastResize?.cols === cols && lastResize.rows === rows) {
+        return
+      }
 
-    if (resizeFrameRef.current) {
-      cancelAnimationFrame(resizeFrameRef.current)
-    }
+      if (resizeFrameRef.current) {
+        cancelAnimationFrame(resizeFrameRef.current)
+      }
 
-    resizeFrameRef.current = requestAnimationFrame(() => {
-      if (!socket) return
-      if (cols <= 0 || rows <= 0) return
-      lastResizeRef.current = { cols, rows }
-      socket.emit("terminal_resize", { cols, rows })
-    })
-  }, [socket])
+      resizeFrameRef.current = requestAnimationFrame(() => {
+        if (!socket) return
+        if (cols <= 0 || rows <= 0) return
+        lastResizeRef.current = { cols, rows }
+        socket.emit("terminal_resize", { cols, rows })
+      })
+    },
+    [socket],
+  )
 
   useEffect(() => {
     if (!xtermRef.current) {

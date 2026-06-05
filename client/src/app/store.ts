@@ -9,6 +9,7 @@ import { rolesApiSlice } from "../features/user/rolesApiSlice"
 import { permissionApiSlice } from "../features/user/permissionApiSlice"
 import { sensorsSlice } from "../features/sensors/sensorsSlice"
 import { systemApiSlice } from "../features/sensors/systemApiSlice"
+import { servicesApiSlice } from "../features/sensors/servicesApiSlice"
 
 // `combineSlices` automatically combines the reducers using
 // their `reducerPath`s, therefore we no longer need to call `combineReducers`.
@@ -21,6 +22,7 @@ const rootReducer = combineSlices(
   permissionApiSlice,
   sensorsSlice,
   systemApiSlice,
+  servicesApiSlice,
 )
 // Infer the `RootState` type from the root reducer
 export type RootState = ReturnType<typeof rootReducer>
@@ -39,6 +41,7 @@ export const makeStore = (preloadedState?: Partial<RootState>) => {
         permissionApiSlice.middleware,
         usersApiSlice.middleware,
         systemApiSlice.middleware,
+        servicesApiSlice.middleware,
       )
     },
     preloadedState,

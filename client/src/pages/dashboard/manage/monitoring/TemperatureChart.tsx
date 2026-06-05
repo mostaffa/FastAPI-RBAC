@@ -43,7 +43,9 @@ export default function TemperatureChart({ data }: Props) {
     .filter(value => Number.isFinite(value))
   const thresholdValues = data
     .flatMap(point => [point.high, point.critical])
-    .filter((value): value is number => value !== null && Number.isFinite(value))
+    .filter(
+      (value): value is number => value !== null && Number.isFinite(value),
+    )
     .filter(value => value > 0)
 
   const allValues = [...currentValues, ...thresholdValues]
@@ -71,7 +73,13 @@ export default function TemperatureChart({ data }: Props) {
           margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
         >
           <defs>
-            <linearGradient id="temperatureGradient" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient
+              id="temperatureGradient"
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
               <stop offset="5%" stopColor={strokeColor} stopOpacity={0.35} />
               <stop offset="95%" stopColor={strokeColor} stopOpacity={0.03} />
             </linearGradient>
@@ -101,7 +109,11 @@ export default function TemperatureChart({ data }: Props) {
               y={high}
               stroke={theme.palette.warning.main}
               strokeDasharray="4 4"
-              label={{ value: "High", fill: theme.palette.warning.main, fontSize: 11 }}
+              label={{
+                value: "High",
+                fill: theme.palette.warning.main,
+                fontSize: 11,
+              }}
             />
           ) : null}
           {critical !== null ? (

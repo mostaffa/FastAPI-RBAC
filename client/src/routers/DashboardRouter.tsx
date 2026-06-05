@@ -31,6 +31,9 @@ const Cpu = React.lazy(() => import("@/pages/dashboard/manage/monitoring/Cpu"))
 const Disk = React.lazy(
   () => import("@/pages/dashboard/manage/monitoring/Disk"),
 )
+const Services = React.lazy(
+  () => import("@/pages/dashboard/manage/monitoring/Services"),
+)
 const SystemInfo = React.lazy(
   () => import("@/pages/dashboard/sensors/SystemInfo"),
 )
@@ -164,6 +167,16 @@ export default function DashboardRouter() {
             }
           />
         </>
+      ) : null}
+      {permissions?.includes("services:read") || user?.user.role?.id === 1 ? (
+        <Route
+          path="/services"
+          element={
+            <React.Suspense fallback={<Loader />}>
+              <Services />
+            </React.Suspense>
+          }
+        />
       ) : null}
     </Routes>
   )

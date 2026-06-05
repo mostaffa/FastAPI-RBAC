@@ -5,7 +5,13 @@ import { setSensors } from "../../features/sensors/sensorsSlice"
 import SocketContext from "./SocketContext"
 import type { ReactNode } from "react"
 import type { Socket } from "socket.io-client"
-import type { UserRead, RoleRead, PermissionRead, UserOut } from "../../api"
+import type {
+  UserRead,
+  RoleRead,
+  PermissionRead,
+  UserOut,
+  ServicesSnapshot,
+} from "../../api"
 import { rolesApiSlice } from "../../features/user/rolesApiSlice"
 import { usersApiSlice } from "../../features/user/usersApiSlice"
 import useNotifications from "../useNotifications/useNotifications"
@@ -63,6 +69,7 @@ export type SocketMessage =
       payload: { role: RoleRead; permission: PermissionRead }
     }
   | { type: "sensors"; payload: Record<string, [string]> }
+  | { type: "services"; payload: ServicesSnapshot }
 
 export const SocketProvider = ({ children }: SocketProviderProps) => {
   const dispatch = useAppDispatch()
@@ -161,6 +168,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                 },
               ),
             )
+            setMessage(null)
             break
           case "role_deleted":
             dispatch(
@@ -178,6 +186,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                 },
               ),
             )
+            setMessage(null)
             break
           case "role_updated":
             dispatch(
@@ -200,6 +209,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                 },
               ),
             )
+            setMessage(null)
             break
           case "role_permission_added": {
             const permissionToAdd = message.payload.permission
@@ -222,6 +232,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
               // dispatch(addPermission(permissionToAdd.name))
               addPerm(permissionToAdd.name)
             }
+            setMessage(null)
             break
           }
           case "role_permission_removed": {
@@ -245,8 +256,10 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
               user.user.role?.id ===
               (message.payload as { role: RoleRead }).role.id
             ) {
+              console.log(message)
               removePerm(permissionToRemove.name)
             }
+            setMessage(null)
             break
           }
           case "user_created":
@@ -264,6 +277,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                 },
               ),
             )
+            setMessage(null)
             break
           case "user_updated":
             dispatch(
@@ -317,9 +331,12 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                 },
               ),
             )
+            setMessage(null)
             break
           case "sensors":
             dispatch(setSensors(message.payload.sensors))
+            break
+          case "services":
             break
           default:
             console.warn("Unhandled message type:", message)
