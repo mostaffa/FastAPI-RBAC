@@ -12,13 +12,12 @@ import Typography from "@mui/material/Typography"
 import Stack from "@mui/material/Stack"
 import MuiCard from "@mui/material/Card"
 import { styled } from "@mui/material/styles"
-import AppTheme from "../../theme/AppTheme"
-import ColorModeSelect from "../../theme/ColorModeSelect"
+import AppTheme from "@/theme/AppTheme"
+import ColorModeSelect from "@/theme/ColorModeSelect"
 import {
   GoogleIcon,
   FacebookIcon,
-  SitemarkIcon,
-} from "../../components/signin/CustomIcons"
+} from "@/components/signin/CustomIcons"
 import { useForm, Controller } from "react-hook-form"
 import { useAuth } from "@/hooks/useAuth/useAuth"
 
@@ -33,11 +32,9 @@ const Card = styled(MuiCard)(({ theme }) => ({
   [theme.breakpoints.up("sm")]: {
     maxWidth: "450px",
   },
-  boxShadow:
-    "hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px",
+  boxShadow: theme.shadows[1],
   ...theme.applyStyles("dark", {
-    boxShadow:
-      "hsla(220, 30%, 5%, 0.5) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.08) 0px 15px 35px -5px",
+    boxShadow: theme.shadows[1],
   }),
 }))
 
@@ -54,12 +51,10 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
     position: "absolute",
     zIndex: -1,
     inset: 0,
-    backgroundImage:
-      "radial-gradient(ellipse at 50% 50%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))",
+    backgroundImage: `radial-gradient(ellipse at 50% 50%, rgba(${theme.vars.palette.primary.mainChannel} / 0.14), ${theme.vars.palette.background.default})`,
     backgroundRepeat: "no-repeat",
     ...theme.applyStyles("dark", {
-      backgroundImage:
-        "radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))",
+      backgroundImage: `radial-gradient(ellipse at 50% 50%, rgba(${theme.vars.palette.primary.mainChannel} / 0.24), ${theme.vars.palette.background.default})`,
     }),
   },
 }))
@@ -92,7 +87,6 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
           sx={{ position: "fixed", top: "1rem", right: "1rem" }}
         />
         <Card variant="outlined">
-          <SitemarkIcon />
           <Typography
             component="h1"
             variant="h4"
@@ -128,7 +122,7 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
                   autoFocus
                   required
                   fullWidth
-                  variant="outlined"
+                  variant="standard"
                 />
               )}
             />
@@ -145,7 +139,7 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
                   autoComplete="current-password"
                   required
                   fullWidth
-                  variant="outlined"
+                  variant="standard"
                 />
               )}
             />

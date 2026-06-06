@@ -1,4 +1,5 @@
 export { dataGridCustomizations } from "./dataGrid"
 export { datePickersCustomizations } from "./datePickers"
 export { formInputCustomizations } from "./formInput"
+export { navigationCustomizations } from "./navigation"
 export { sidebarCustomizations } from "./sidebar"

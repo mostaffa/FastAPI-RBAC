@@ -97,6 +97,7 @@ export default function DashboardLayout() {
             flexDirection: "column",
             flex: 1,
             overflow: "auto",
+              // backgroundColor: theme.vars.palette.background.default,
           }}
         >
           <React.Suspense fallback={<Loader />}>

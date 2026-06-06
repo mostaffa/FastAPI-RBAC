@@ -89,7 +89,7 @@ function PageShell({
       elevation={2}
       sx={{
         p: 2.5,
-        border: theme => `2px solid ${theme.palette.primary.main}`,
+        border: theme => `2px solid ${theme.palette.divider}`,
       }}
     >
       <Stack

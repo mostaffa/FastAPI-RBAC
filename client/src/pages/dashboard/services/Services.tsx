@@ -140,7 +140,7 @@ export default function Services() {
       <Grid
         component={Paper}
         elevation={2}
-        sx={{ p: 2, border: `2px solid ${theme.palette.primary.main}` }}
+        sx={{ p: 2, border: `2px solid ${theme.palette.divider}` }}
       >
         <Typography variant="h1" textAlign="center" fontWeight="100">
           Services

@@ -21,20 +21,20 @@ const UserForm = React.lazy(
 )
 const Sensors = React.lazy(() => import("@/pages/dashboard/sensor/Sensor"))
 const Temperature = React.lazy(
-  () => import("@/pages/dashboard/manage/monitoring"),
+  () => import("@/pages/dashboard/monitoring"),
 )
 const Memory = React.lazy(
-  () => import("@/pages/dashboard/manage/monitoring/Memory"),
+  () => import("@/pages/dashboard/monitoring/Memory"),
 )
-const Cpu = React.lazy(() => import("@/pages/dashboard/manage/monitoring/Cpu"))
+const Cpu = React.lazy(() => import("@/pages/dashboard/monitoring/Cpu"))
 const Disk = React.lazy(
-  () => import("@/pages/dashboard/manage/monitoring/Disk"),
+  () => import("@/pages/dashboard/monitoring/Disk"),
 )
 const Services = React.lazy(
-  () => import("@/pages/dashboard/manage/monitoring/Services"),
+  () => import("@/pages/dashboard/services/Services"),
 )
 const SystemInfo = React.lazy(
-  () => import("@/pages/dashboard/sensors/SystemInfo"),
+  () => import("@/pages/dashboard/monitoring/SystemInfo"),
 )
 
 export default function DashboardRouter() {

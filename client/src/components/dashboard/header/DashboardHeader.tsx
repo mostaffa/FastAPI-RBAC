@@ -16,8 +16,12 @@ const AppBar = styled(MuiAppBar)(({ theme }) => ({
   borderWidth: 0,
   borderBottomWidth: 1,
   borderStyle: "solid",
-  borderColor: theme.palette.divider,
+  borderColor: theme.vars.palette.divider,
   boxShadow: "none",
+  color: theme.vars.palette.text.primary,
+  backgroundColor: theme.vars.palette.background.paper,
+  backgroundImage: "none",
+  backdropFilter: "blur(10px)",
   zIndex: theme.zIndex.drawer + 1,
 }))
 
@@ -96,7 +100,7 @@ export default function DashboardHeader({
                   <Typography
                     variant="h6"
                     sx={{
-                      color: theme.palette.primary.main,
+                      color: theme.vars.palette.text.primary,
                       fontWeight: "700",
                       ml: 1,
                       whiteSpace: "nowrap",
