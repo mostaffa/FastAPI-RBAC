@@ -1,7 +1,12 @@
 import asyncio
 import json
+import shutil
 from datetime import datetime, timezone
 from typing import Any
+
+
+SYSTEMCTL_BIN = shutil.which("systemctl") or "/bin/systemctl"
+DOCKER_BIN = shutil.which("docker") or "/usr/bin/docker"
 
 
 class ServicesMonitor:
@@ -41,7 +46,7 @@ class ServicesMonitor:
     ) -> tuple[list[dict[str, Any]], bool, str | None]:
         code, stdout, stderr = await ServicesMonitor._run_command(
             [
-                "systemctl",
+                SYSTEMCTL_BIN,
                 "list-units",
                 "--type=service",
                 "--all",
@@ -92,7 +97,7 @@ class ServicesMonitor:
         include_details: bool = True,
     ) -> tuple[list[dict[str, Any]], bool, str | None]:
         code, stdout, stderr = await ServicesMonitor._run_command(
-            ["docker", "ps", "-a", "--format", "{{json .}}"]
+            [DOCKER_BIN, "ps", "-a", "--format", "{{json .}}"]
         )
 
         if code != 0:
@@ -171,12 +176,12 @@ class ServicesMonitor:
         action = "start" if enabled else "stop"
         if source == "linux":
             code, stdout, stderr = await ServicesMonitor._run_command(
-                ["systemctl", action, name],
+                [SYSTEMCTL_BIN, action, name],
                 timeout=8.0,
             )
         elif source == "docker":
             code, stdout, stderr = await ServicesMonitor._run_command(
-                ["docker", action, name],
+                [DOCKER_BIN, action, name],
                 timeout=8.0,
             )
         else:
