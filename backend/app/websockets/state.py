@@ -2,10 +2,8 @@ import asyncio
 from collections import defaultdict
 from typing import DefaultDict
 
-from app.services.sys_cmd import TerminalService
 
 
-terminal_sessions: dict[str, TerminalService] = {}
 temperature_sessions: dict[str, int] = {}
 # Backward compatible alias for existing code paths using the old typo.
 temparature_sessions = temperature_sessions

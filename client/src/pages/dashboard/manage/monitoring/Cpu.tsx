@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import Container from "@mui/material/Container"
 import Paper from "@mui/material/Paper"
 import Grid from "@mui/material/Grid"
@@ -7,7 +15,9 @@ import useSocket from "@/hooks/useSocket/useSocket"
 import { useTheme } from "@mui/material/styles"
 import type { CpuRealtimeResponse, CpuStats } from "@/utils/types"
 import { Box, LinearProgress } from "@mui/material"
-import CpuChart, { type CpuDataPoint } from "./CpuChart"
+import type { CpuDataPoint } from "./CpuChart"
+
+const CpuChart = lazy(() => import("./CpuChart"))
 
 const MAX_HISTORY = 60
 
@@ -153,7 +163,15 @@ export default function Cpu() {
             <Typography variant="h6" sx={{ mb: 1 }}>
               Usage History
             </Typography>
-            <CpuChart data={history} />
+            <Suspense
+              fallback={
+                <Box sx={{ py: 2 }}>
+                  <LinearProgress />
+                </Box>
+              }
+            >
+              <CpuChart data={history} />
+            </Suspense>
           </Paper>
         </Grid>
 

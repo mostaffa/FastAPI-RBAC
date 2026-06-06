@@ -40,9 +40,10 @@ export const servicesApiSlice = createApi({
     >({
       async queryFn(body) {
         try {
-          const data = await ServicesService.updateServiceStateApiV1ServicesStatePost({
-            requestBody: body,
-          })
+          const data =
+            await ServicesService.updateServiceStateApiV1ServicesStatePost({
+              requestBody: body,
+            })
           return { data }
         } catch (error) {
           return {

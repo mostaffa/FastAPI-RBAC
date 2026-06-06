@@ -78,7 +78,7 @@ export default function Services() {
   const snapshot: ServicesSnapshot =
     detailsEnabled && detailedSnapshot
       ? detailedSnapshot
-      : summarySnapshot ?? EMPTY_SNAPSHOT
+      : (summarySnapshot ?? EMPTY_SNAPSHOT)
 
   const isActive = (item: ServiceItem): boolean => {
     if (typeof item.is_active === "boolean") return item.is_active
@@ -307,20 +307,22 @@ export default function Services() {
                       color={statusColor(item.state ?? item.status)}
                       label={item.state ?? item.status ?? "unknown"}
                     />
-                    {canUpdateServices && (<FormControlLabel
-                      sx={{ mr: 0 }}
-                      control={
-                        <Switch
-                          size="small"
-                          checked={isActive(item)}
-                          disabled={pendingById[item.id]}
-                          onChange={(_, checked) => {
-                            handleToggleState(item, checked)
-                          }}
-                        />
-                      }
-                      label={isActive(item) ? "On" : "Off"}
-                    />)}
+                    {canUpdateServices && (
+                      <FormControlLabel
+                        sx={{ mr: 0 }}
+                        control={
+                          <Switch
+                            size="small"
+                            checked={isActive(item)}
+                            disabled={pendingById[item.id]}
+                            onChange={(_, checked) => {
+                              handleToggleState(item, checked)
+                            }}
+                          />
+                        }
+                        label={isActive(item) ? "On" : "Off"}
+                      />
+                    )}
                   </Stack>
                 </Stack>
                 <Typography variant="caption" color="text.secondary">

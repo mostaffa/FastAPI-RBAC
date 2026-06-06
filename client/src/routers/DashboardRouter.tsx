@@ -20,7 +20,6 @@ const UserForm = React.lazy(
   () => import("@/pages/dashboard/admin/users/UserForm"),
 )
 const Sensors = React.lazy(() => import("@/pages/dashboard/sensor/Sensor"))
-const Manage = React.lazy(() => import("@/pages/dashboard/manage"))
 const Temperature = React.lazy(
   () => import("@/pages/dashboard/manage/monitoring"),
 )
@@ -111,18 +110,6 @@ export default function DashboardRouter() {
             </React.Suspense>
           }
         />
-      ) : null}
-      {permissions?.includes("terminal:read") || user?.user.role?.id === 1 ? (
-        <>
-          <Route
-            path="/manage/*"
-            element={
-              <React.Suspense fallback={<Loader />}>
-                <Manage />
-              </React.Suspense>
-            }
-          />
-        </>
       ) : null}
       {permissions?.includes("sensors:read") || user?.user.role?.id === 1 ? (
         <>

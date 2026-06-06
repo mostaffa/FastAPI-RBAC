@@ -9,11 +9,10 @@ from app.websockets.services_handlers import (
     register_services_handlers,
 )
 from app.websockets.socket_server import emit, socket_app, socket_disconnect, socket_event
-from app.websockets.terminal_handlers import register_terminal_handlers
 
 
 register_connection_handlers(socket_event)
-register_terminal_handlers(socket_event)
+# register_terminal_handlers(socket_event)
 register_sensor_handlers(socket_event)
 register_services_handlers(socket_event)
 

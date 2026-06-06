@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import Container from "@mui/material/Container"
 import Paper from "@mui/material/Paper"
 import Grid from "@mui/material/Grid"
@@ -7,7 +15,9 @@ import useSocket from "@/hooks/useSocket/useSocket"
 import { useTheme } from "@mui/material/styles"
 import type { MemoryRealtimeResponse, MemoryStats } from "@/utils/types"
 import { Box, LinearProgress } from "@mui/material"
-import MemoryChart, { type MemoryDataPoint } from "./MemoryChart"
+import type { MemoryDataPoint } from "./MemoryChart"
+
+const MemoryChart = lazy(() => import("./MemoryChart"))
 
 const MAX_HISTORY = 60
 
@@ -170,7 +180,15 @@ export default function Memory() {
             <Typography variant="h6" sx={{ mb: 1 }}>
               Usage History
             </Typography>
-            <MemoryChart data={history} />
+            <Suspense
+              fallback={
+                <Box sx={{ py: 2 }}>
+                  <LinearProgress />
+                </Box>
+              }
+            >
+              <MemoryChart data={history} />
+            </Suspense>
           </Paper>
         </Grid>
 

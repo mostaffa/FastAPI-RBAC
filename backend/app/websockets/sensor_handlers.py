@@ -74,40 +74,6 @@ async def cleanup_sensor_subscriptions(sid: str) -> None:
 
 def register_sensor_handlers(socket_event: Any) -> None:
     @socket_event
-    async def sensor_list(sid: str, message: dict[str, Any]):
-        print(f"\u001b[32mSensor Message Request Incomming: {sid}\u001b[0m")
-        print(message)
-        user_id = state.sid_user[sid]
-        with db_session_scope() as db:
-            user: User | None = db.exec(select(User).where(User.id == user_id)).first()
-            if not user:
-                print(f"\u001b[31mUser not found for SID: {sid}\u001b[0m")
-                await emit(
-                    event="error",
-                    data={"code": 404, "message": "User not found"},
-                    room=sid,
-                )
-                return
-            sensor_read_perm = db.exec(
-                select(Permission)
-                .join(RolePermission)
-                .where(RolePermission.role_id == user.role_id)
-                .where(Permission.name == "sensors:read")
-            ).all()
-
-        if sensor_read_perm:
-            print("User Has Sensor Read Permission")
-            data = await sensor_service.get_sensor_list()
-            print(data)
-            await emit(event="msg", data={"type": "sensors", "payload": data})
-        else:
-            print("User Dosent Has Sensor Read Permission")
-            await emit(
-                event="error",
-                data={"code": 403, "message": "You dont have permission to read Sensors"},
-            )
-
-    @socket_event
     async def temp_realtime_start(sid: str, message: dict):
         del message
         user_id = state.sid_user[sid]

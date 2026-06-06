@@ -2,10 +2,9 @@
 /* istanbul ignore file */
 /* eslint-disable */
 export type ValidationError = {
-    loc: Array<(string | number)>;
-    msg: string;
-    type: string;
-    input?: any;
-    ctx?: Record<string, any>;
-};
-
+  loc: Array<string | number>
+  msg: string
+  type: string
+  input?: any
+  ctx?: Record<string, any>
+}

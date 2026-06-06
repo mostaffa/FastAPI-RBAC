@@ -33,26 +33,26 @@ class SensorService:
     def stop_temp_monitoring():
         SensorService.temp_realtime = False
     
-    async def get_sensor_list(self):
-        """Executes 'termux-sensor -l' and returns a parsed list of sensors"""
-        process = await asyncio.create_subprocess_exec(
-            'termux-sensor', '-l',
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
+    # async def get_sensor_list(self):
+    #     """Executes 'termux-sensor -l' and returns a parsed list of sensors"""
+    #     process = await asyncio.create_subprocess_exec(
+    #         'termux-sensor', '-l',
+    #         stdout=asyncio.subprocess.PIPE,
+    #         stderr=asyncio.subprocess.PIPE
+    #     )
         
-        stdout, stderr = await process.communicate()
+    #     stdout, stderr = await process.communicate()
         
-        if process.returncode != 0:
-            return {"error": "Failed to fetch sensors", "details": stderr.decode()}
+    #     if process.returncode != 0:
+    #         return {"error": "Failed to fetch sensors", "details": stderr.decode()}
 
-        try:
-            # Termux usually returns a JSON array of sensors
-            output = stdout.decode().strip()
-            return json.loads(output)
-        except json.JSONDecodeError:
-            # Fallback if the output isn't clean JSON
-            return {"raw_output": stdout.decode().strip()}
+    #     try:
+    #         # Termux usually returns a JSON array of sensors
+    #         output = stdout.decode().strip()
+    #         return json.loads(output)
+    #     except json.JSONDecodeError:
+    #         # Fallback if the output isn't clean JSON
+    #         return {"raw_output": stdout.decode().strip()}
 
     @staticmethod
     async def start_mem_monitoring(manager):

@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
 import Container from "@mui/material/Container"
 import Paper from "@mui/material/Paper"
 import Grid from "@mui/material/Grid"
@@ -10,7 +17,9 @@ import type {
   SensorsTemperaturesResponse,
 } from "@/utils/types"
 import { Box, Chip, Divider, LinearProgress, Tab, Tabs } from "@mui/material"
-import TemperatureChart, { type TemperatureDataPoint } from "./TemperatureChart"
+import type { TemperatureDataPoint } from "./TemperatureChart"
+
+const TemperatureChart = lazy(() => import("./TemperatureChart"))
 
 const MAX_HISTORY = 60
 
@@ -263,16 +272,36 @@ export default function Temperature() {
                 <Typography variant="h6" sx={{ mb: 1 }}>
                   Usage History
                 </Typography>
-                <TemperatureChart data={activeHistory} />
+                <Suspense
+                  fallback={
+                    <Box sx={{ py: 2 }}>
+                      <LinearProgress />
+                    </Box>
+                  }
+                >
+                  <TemperatureChart data={activeHistory} />
+                </Suspense>
               </Paper>
 
               <Grid container spacing={1}>
                 {activeReadings.map(
                   ([label, current, high, critical], index) => {
-                    const level = getTemperatureLevel(current, high, critical)
-                    const thresholds = getThresholds(high, critical)
+                    const normalizedCurrent = normalizeTempValue(current)
+                    const normalizedHigh =
+                      high !== null ? normalizeTempValue(high) : null
+                    const normalizedCritical =
+                      critical !== null ? normalizeTempValue(critical) : null
+                    const thresholds = getThresholds(
+                      normalizedHigh,
+                      normalizedCritical,
+                    )
+                    const level = getTemperatureLevel(
+                      normalizedCurrent,
+                      normalizedHigh,
+                      normalizedCritical,
+                    )
                     const progress = Math.min(
-                      (current / thresholds.max) * 100,
+                      (normalizedCurrent / thresholds.max) * 100,
                       100,
                     )
                     const levelColor =
@@ -339,17 +368,30 @@ export default function Temperature() {
                             }}
                           />
                           <Typography variant="body2">
-                            Current: {current}°C
+                            Current: {normalizedCurrent.toFixed(1)}°C
                           </Typography>
                           <Typography variant="body2">
-                            High: {high !== null ? String(high) + "°C" : "N/A"}
+                            High:{" "}
+                            {normalizedHigh !== null
+                              ? `${normalizedHigh.toFixed(1)}°C`
+                              : `${thresholds.warning.toFixed(1)}°C (estimated)`}
                           </Typography>
                           <Typography variant="body2">
                             Critical:{" "}
-                            {critical !== null
-                              ? String(critical) + "°C"
-                              : "N/A"}
+                            {normalizedCritical !== null
+                              ? `${normalizedCritical.toFixed(1)}°C`
+                              : `${thresholds.error.toFixed(1)}°C (estimated)`}
                           </Typography>
+                          {normalizedHigh === null ||
+                          normalizedCritical === null ? (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: "block", mt: 0.5 }}
+                            >
+                              Hardware thresholds unavailable from this sensor.
+                            </Typography>
+                          ) : null}
                         </Grid>
                       </Grid>
                     )
