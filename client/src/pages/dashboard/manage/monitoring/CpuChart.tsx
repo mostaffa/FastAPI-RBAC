@@ -20,7 +20,11 @@ function chartPointY(percent: number, height: number): number {
   return height - normalized * height
 }
 
-function createLinePath(data: CpuDataPoint[], width: number, height: number): string {
+function createLinePath(
+  data: CpuDataPoint[],
+  width: number,
+  height: number,
+): string {
   if (data.length === 0) return ""
 
   if (data.length === 1) {
@@ -37,7 +41,11 @@ function createLinePath(data: CpuDataPoint[], width: number, height: number): st
     .join(" ")
 }
 
-function createAreaPath(data: CpuDataPoint[], width: number, height: number): string {
+function createAreaPath(
+  data: CpuDataPoint[],
+  width: number,
+  height: number,
+): string {
   const linePath = createLinePath(data, width, height)
   if (!linePath) return ""
 
@@ -49,13 +57,9 @@ export default function CpuChart({ data }: Props) {
   const theme = useTheme()
   const latest = data.length > 0 ? data[data.length - 1].percent : 0
   const min =
-    data.length > 0
-      ? Math.min(...data.map(point => point.percent))
-      : 0
+    data.length > 0 ? Math.min(...data.map(point => point.percent)) : 0
   const max =
-    data.length > 0
-      ? Math.max(...data.map(point => point.percent))
-      : 0
+    data.length > 0 ? Math.max(...data.map(point => point.percent)) : 0
   const startLabel = data.length > 0 ? data[0].time : "--:--:--"
   const endLabel = data.length > 0 ? data[data.length - 1].time : "--:--:--"
   const strokeColor = usageColor(theme, latest)
@@ -79,10 +83,24 @@ export default function CpuChart({ data }: Props) {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
         Last {data.length} readings (1 s interval)
       </Typography>
-      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 1 }}>
+      <Stack
+        direction="row"
+        spacing={1}
+        useFlexGap
+        flexWrap="wrap"
+        sx={{ mb: 1 }}
+      >
         <Chip size="small" label={`Current ${latest.toFixed(1)}%`} />
-        <Chip size="small" label={`Min ${min.toFixed(1)}%`} variant="outlined" />
-        <Chip size="small" label={`Max ${max.toFixed(1)}%`} variant="outlined" />
+        <Chip
+          size="small"
+          label={`Min ${min.toFixed(1)}%`}
+          variant="outlined"
+        />
+        <Chip
+          size="small"
+          label={`Max ${max.toFixed(1)}%`}
+          variant="outlined"
+        />
       </Stack>
       <Box
         sx={{ position: "relative", width: "100%", height: chartHeight }}
@@ -202,9 +220,7 @@ export default function CpuChart({ data }: Props) {
               top: 8,
               left: `${String(hoverLeftPercent)}%`,
               transform:
-                hoverLeftPercent > 70
-                  ? "translateX(-100%)"
-                  : "translateX(8px)",
+                hoverLeftPercent > 70 ? "translateX(-100%)" : "translateX(8px)",
               bgcolor: "background.paper",
               border: theme => `1px solid ${theme.palette.divider}`,
               borderRadius: 1,

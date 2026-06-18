@@ -65,7 +65,11 @@ function StatCard({ label, value }: StatCardProps) {
         <Typography variant="body2" color="text.secondary">
           {label}
         </Typography>
-        <Typography variant="h6" sx={{ mt: 0.5, wordBreak: "break-word" }}>
+        <Typography
+          variant="h6"
+          component="h2"
+          sx={{ mt: 0.5, wordBreak: "break-word" }}
+        >
           {value}
         </Typography>
       </CardContent>
@@ -306,6 +310,7 @@ export default function SystemInfo() {
                 {`Used ${formatBytes(memUsed)} of ${formatBytes(systemInfo.memory_total_bytes)}`}
               </Typography>
               <LinearProgress
+                aria-label="Memory Total"
                 variant="determinate"
                 value={memPercent}
                 sx={{ height: 12, borderRadius: 999 }}

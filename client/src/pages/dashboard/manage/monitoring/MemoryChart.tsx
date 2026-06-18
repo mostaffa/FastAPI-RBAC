@@ -57,13 +57,9 @@ export default function MemoryChart({ data }: Props) {
   const theme = useTheme()
   const latest = data.length > 0 ? data[data.length - 1].percent : 0
   const min =
-    data.length > 0
-      ? Math.min(...data.map(point => point.percent))
-      : 0
+    data.length > 0 ? Math.min(...data.map(point => point.percent)) : 0
   const max =
-    data.length > 0
-      ? Math.max(...data.map(point => point.percent))
-      : 0
+    data.length > 0 ? Math.max(...data.map(point => point.percent)) : 0
   const startLabel = data.length > 0 ? data[0].time : "--:--:--"
   const endLabel = data.length > 0 ? data[data.length - 1].time : "--:--:--"
   const strokeColor = usageColor(theme, latest)
@@ -87,10 +83,24 @@ export default function MemoryChart({ data }: Props) {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
         Last {data.length} readings (1 s interval)
       </Typography>
-      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 1 }}>
+      <Stack
+        direction="row"
+        spacing={1}
+        useFlexGap
+        flexWrap="wrap"
+        sx={{ mb: 1 }}
+      >
         <Chip size="small" label={`Current ${latest.toFixed(1)}%`} />
-        <Chip size="small" label={`Min ${min.toFixed(1)}%`} variant="outlined" />
-        <Chip size="small" label={`Max ${max.toFixed(1)}%`} variant="outlined" />
+        <Chip
+          size="small"
+          label={`Min ${min.toFixed(1)}%`}
+          variant="outlined"
+        />
+        <Chip
+          size="small"
+          label={`Max ${max.toFixed(1)}%`}
+          variant="outlined"
+        />
       </Stack>
       <Box
         sx={{ position: "relative", width: "100%", height: chartHeight }}
@@ -115,13 +125,7 @@ export default function MemoryChart({ data }: Props) {
           aria-label="Memory usage chart"
         >
           <defs>
-            <linearGradient
-              id="memoryAreaGradient"
-              x1="0"
-              y1="0"
-              x2="0"
-              y2="1"
-            >
+            <linearGradient id="memoryAreaGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={strokeColor} stopOpacity="0.35" />
               <stop offset="95%" stopColor={strokeColor} stopOpacity="0.03" />
             </linearGradient>
@@ -144,11 +148,7 @@ export default function MemoryChart({ data }: Props) {
           })}
 
           {areaPath ? (
-            <path
-              d={areaPath}
-              fill="url(#memoryAreaGradient)"
-              stroke="none"
-            />
+            <path d={areaPath} fill="url(#memoryAreaGradient)" stroke="none" />
           ) : null}
 
           {linePath ? (
@@ -220,9 +220,7 @@ export default function MemoryChart({ data }: Props) {
               top: 8,
               left: `${String(hoverLeftPercent)}%`,
               transform:
-                hoverLeftPercent > 70
-                  ? "translateX(-100%)"
-                  : "translateX(8px)",
+                hoverLeftPercent > 70 ? "translateX(-100%)" : "translateX(8px)",
               bgcolor: "background.paper",
               border: theme => `1px solid ${theme.palette.divider}`,
               borderRadius: 1,

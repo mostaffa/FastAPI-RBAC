@@ -123,6 +123,7 @@ export default function Cpu() {
             </Typography>
             <Box sx={{ position: "relative" }}>
               <LinearProgress
+                aria-label="CPU Usage progress"
                 variant="determinate"
                 value={usagePercent}
                 sx={{

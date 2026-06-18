@@ -1,25 +1,22 @@
-import React, { useCallback } from "react"
+import { useCallback, lazy, Suspense } from "react"
 import Container from "@mui/material/Container"
 import Grid from "@mui/material/Grid"
 import Paper from "@mui/material/Paper"
 import Typography from "@mui/material/Typography"
-import { useDialogs } from "../../../../hooks/useDialogs/useDialogs"
-import { useGetUsersQuery } from "../../../../features/user/usersApiSlice"
+import { useDialogs } from "@/hooks/useDialogs/useDialogs"
+import { useGetUsersQuery } from "@/features/user/usersApiSlice"
 import Button from "@mui/material/Button"
-import Loader from "../../../../components/ui/loader/Loader"
 import DeleteIcon from "@mui/icons-material/Delete"
 import IconButton from "@mui/material/IconButton"
-import useNotifications from "../../../../hooks/useNotifications/useNotifications"
-import { useAppSelector } from "../../../../app/hooks"
-import {
-  selectPermissions,
-  selectUser,
-} from "../../../../features/user/userSlice"
+import useNotifications from "@/hooks/useNotifications/useNotifications"
+import { useAppSelector } from "@/app/hooks"
+import { selectPermissions, selectUser } from "@/features/user/userSlice"
 import ButtonGroup from "@mui/material/ButtonGroup"
-import type { UserRead } from "../../../../api"
-import { UsersService, ApiError } from "../../../../api"
+import type { UserRead } from "@/api"
+import { UsersService, ApiError } from "@/api"
 
-const UserForm = React.lazy(() => import("./UserForm"))
+const Loader = lazy(() => import("@/components/ui/loader/Loader"))
+const UserForm = lazy(() => import("./UserForm"))
 
 const Users = () => {
   const dialogs = useDialogs()
@@ -30,9 +27,9 @@ const Users = () => {
 
   const handleCreateNewUser = useCallback(async () => {
     await dialogs.contentDialog(
-      <React.Suspense fallback={<Loader />}>
+      <Suspense fallback={<Loader />}>
         <UserForm createNew />
-      </React.Suspense>,
+      </Suspense>,
       {
         title: "Create New User",
       },
@@ -42,9 +39,9 @@ const Users = () => {
   const handleEditUser = useCallback(
     async (user: UserRead) => {
       await dialogs.contentDialog(
-        <React.Suspense fallback={<Loader />}>
+        <Suspense fallback={<Loader />}>
           <UserForm userId={user.id} />
-        </React.Suspense>,
+        </Suspense>,
         {
           title: `Edit ${user.username} User`,
         },

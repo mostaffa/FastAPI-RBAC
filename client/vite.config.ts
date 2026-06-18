@@ -1,16 +1,28 @@
-import react from "@vitejs/plugin-react-swc"
+import react from "@vitejs/plugin-react"
 import * as path from "node:path"
 import { defineConfig } from "vitest/config"
 import { visualizer } from "rollup-plugin-visualizer"
 import packageJson from "./package.json" with { type: "json" }
+import { compression, defineAlgorithm } from "vite-plugin-compression2"
+import nodeZlib from "node:zlib"
+import browserslist from "browserslist"
+import { browserslistToTargets } from "lightningcss"
+
+// Load environment variables from .env file
+// import dotenv from "dotenv"
+// dotenv.config({
+//   path: path.resolve(import.meta.dirname, "../.env"),
+// })
+// const env = process.env
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isAnalyze = mode === "analyze"
-
   return {
     plugins: [
-      react(),
+      react({
+        jsxImportSource: "@emotion/react",
+      }),
       isAnalyze &&
         visualizer({
           filename: "../backend/app/static/stats.html",
@@ -19,7 +31,18 @@ export default defineConfig(({ mode }) => {
           brotliSize: true,
           open: false,
         }),
-    ].filter(Boolean),
+      compression({
+        algorithms: [
+          defineAlgorithm("gzip", { level: 9 }), // Wide browser support (all browsers)
+          defineAlgorithm("brotliCompress", {
+            // Better compression (modern browsers)
+            params: {
+              [nodeZlib.constants.BROTLI_PARAM_QUALITY]: 11,
+            },
+          }),
+        ],
+      }),
+    ],
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "src"),
@@ -33,25 +56,30 @@ export default defineConfig(({ mode }) => {
       allowedHosts: ["nest.mostafaothman.com", "ubuntu26"],
       proxy: {
         "/api": {
-          target: "http://localhost:4001",
+          target: "http://localhost:8000",
           changeOrigin: true,
           secure: true,
         },
         "/ws": {
-          target: "ws://localhost:4001",
+          target: "http://localhost:8000",
           changeOrigin: true,
           secure: true,
           ws: true,
         },
       },
     },
-
+    css: {
+      transformer: "lightningcss",
+      lightningcss: {
+        targets: browserslistToTargets(browserslist(">= 0.25%")),
+      },
+    },
     build: {
       target: "es2022",
       sourcemap: false,
       outDir: "../backend/app/static",
       emptyOutDir: true,
-      cssMinify: "esbuild",
+      cssMinify: "lightningcss",
       cssCodeSplit: true,
       modulePreload: {
         polyfill: false,
@@ -63,9 +91,7 @@ export default defineConfig(({ mode }) => {
               return undefined
             }
 
-            if (
-              id.includes("node_modules/@mui/icons-material")
-            ) {
+            if (id.includes("node_modules/@mui/icons-material")) {
               return "vendor-mui-icons"
             }
 
@@ -84,7 +110,10 @@ export default defineConfig(({ mode }) => {
               return "vendor-mui-x"
             }
 
-            if (id.includes("node_modules/@reduxjs") || id.includes("node_modules/react-redux")) {
+            if (
+              id.includes("node_modules/@reduxjs") ||
+              id.includes("node_modules/react-redux")
+            ) {
               return "vendor-redux"
             }
 
@@ -96,16 +125,17 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
+      cssTarget: "es2022",
       manifest: true,
-      minify: "terser",
-      reportCompressedSize: false,
+      minify: "esbuild",
       terserOptions: {
         compress: {
           drop_console: true,
-          passes: 2,
+          drop_debugger: true,
         },
       },
-      assetsInlineLimit: 0,
+      reportCompressedSize: false,
+      assetsInlineLimit: 4096,
     },
 
     test: {

@@ -128,7 +128,13 @@ export default function TemperatureChart({ data }: Props) {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
         Last {data.length} readings (1 s interval)
       </Typography>
-      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 1 }}>
+      <Stack
+        direction="row"
+        spacing={1}
+        useFlexGap
+        flexWrap="wrap"
+        sx={{ mb: 1 }}
+      >
         <Chip size="small" label={`Current ${current.toFixed(1)}°C`} />
         <Chip
           size="small"
@@ -136,7 +142,12 @@ export default function TemperatureChart({ data }: Props) {
           variant="outlined"
         />
         {high !== null ? (
-          <Chip size="small" label={`High ${high.toFixed(1)}°C`} color="warning" variant="outlined" />
+          <Chip
+            size="small"
+            label={`High ${high.toFixed(1)}°C`}
+            color="warning"
+            variant="outlined"
+          />
         ) : null}
         {critical !== null ? (
           <Chip
@@ -213,10 +224,7 @@ export default function TemperatureChart({ data }: Props) {
               <text
                 x="8"
                 y={String(
-                  Math.max(
-                    12,
-                    chartPointY(high, yMin, yMax, chartHeight) - 4,
-                  ),
+                  Math.max(12, chartPointY(high, yMin, yMax, chartHeight) - 4),
                 )}
                 fill={theme.palette.warning.main}
                 fontSize="11"
@@ -330,9 +338,7 @@ export default function TemperatureChart({ data }: Props) {
               top: 8,
               left: `${String(hoverLeftPercent)}%`,
               transform:
-                hoverLeftPercent > 65
-                  ? "translateX(-100%)"
-                  : "translateX(8px)",
+                hoverLeftPercent > 65 ? "translateX(-100%)" : "translateX(8px)",
               bgcolor: "background.paper",
               border: theme => `1px solid ${theme.palette.divider}`,
               borderRadius: 1,
@@ -349,7 +355,11 @@ export default function TemperatureChart({ data }: Props) {
               {hoveredPoint.current.toFixed(1)}°C
             </Typography>
             {hoveredPoint.high !== null ? (
-              <Typography variant="caption" display="block" color="warning.main">
+              <Typography
+                variant="caption"
+                display="block"
+                color="warning.main"
+              >
                 High {hoveredPoint.high.toFixed(1)}°C
               </Typography>
             ) : null}

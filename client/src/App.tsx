@@ -1,68 +1,41 @@
-import React from "react"
-import CssBaseline from "@mui/material/CssBaseline"
-import Loader from "./components/ui/loader/Loader"
-// import { useAppDispatch, useAppSelector } from "./app/hooks"
-// import { selectUser, setUser } from "./features/user/userSlice"
-// import { AuthService } from "./api"
-// // import { SocketProvider } from "./hooks/useSocket/SocketProvider";
+import { lazy, Suspense } from "react"
 import { useAuth } from "./hooks/useAuth/useAuth"
 
-const AppTheme = React.lazy(() => import("./theme/AppTheme"))
-const DialogsProvider = React.lazy(
-  () => import("./hooks/useDialogs/DialogsProvider"),
-)
-const NotificationsProvider = React.lazy(
+const CssBaseline = lazy(() => import("@mui/material/CssBaseline"))
+const Loader = lazy(() => import("@/components/ui/loader/Loader"))
+const AppTheme = lazy(() => import("./theme/AppTheme"))
+const DialogsProvider = lazy(() => import("./hooks/useDialogs/DialogsProvider"))
+const NotificationsProvider = lazy(
   () => import("./hooks/useNotifications/NotificationsProvider"),
 )
-const AppRouter = React.lazy(() => import("./routers/AppRouter"))
-const Signin = React.lazy(() => import("./pages/signin/SignIn"))
-const SocketProvider = React.lazy(
-  () => import("./hooks/useSocket/SocketProvider"),
-)
+const AppRouter = lazy(() => import("./routers/AppRouter"))
+const Signin = lazy(() => import("./pages/signin/SignIn"))
+const SocketProvider = lazy(() => import("./hooks/useSocket/SocketProvider"))
 
 export const App = () => {
-  // const dispatch = useAppDispatch()
-  // const user = useAppSelector(selectUser)
   const { user } = useAuth()
 
-  // useEffect(() => {
-  //   if (!user) {
-  //     AuthService.readCurrentUserApiV1AuthMeGet()
-  //       .then(userData => {
-  //         dispatch(setUser(userData))
-  //       })
-  //       .catch((error: unknown) => {
-  //         // No current user
-  //         console.log("No current user:", error)
-  //       })
-  //   }
-  // }, [user, dispatch])
   return (
-    <React.Suspense fallback={<Loader />}>
+    <Suspense fallback={<Loader />}>
       <AppTheme>
         <CssBaseline enableColorScheme />
-
-        <React.Suspense fallback={<Loader />}>
-          <NotificationsProvider>
-            <React.Suspense fallback={<Loader />}>
-              <DialogsProvider>
-                <React.Suspense fallback={<Loader />}>
-                  <SocketProvider>
-                    {user ? (
-                      <AppRouter />
-                    ) : (
-                      <React.Suspense fallback={<Loader />}>
-                        <Signin />
-                      </React.Suspense>
-                    )}
-                  </SocketProvider>
-                </React.Suspense>
-              </DialogsProvider>
-            </React.Suspense>
-          </NotificationsProvider>
-        </React.Suspense>
+        <NotificationsProvider>
+          <DialogsProvider>
+            <SocketProvider>
+              {user ? (
+                <Suspense fallback={<Loader />}>
+                  <AppRouter />
+                </Suspense>
+              ) : (
+                <Suspense fallback={<Loader />}>
+                  <Signin />
+                </Suspense>
+              )}
+            </SocketProvider>
+          </DialogsProvider>
+        </NotificationsProvider>
       </AppTheme>
-    </React.Suspense>
+    </Suspense>
   )
 }
 

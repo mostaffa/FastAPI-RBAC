@@ -275,7 +275,7 @@ export default function Temperature() {
                 <Suspense
                   fallback={
                     <Box sx={{ py: 2 }}>
-                      <LinearProgress />
+                      <LinearProgress aria-label="Usage History" />
                     </Box>
                   }
                 >

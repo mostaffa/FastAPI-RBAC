@@ -44,7 +44,7 @@ export default function AppTheme(props: AppThemeProps) {
             MuiCssBaseline: {
               styleOverrides: theme => ({
                 body: {
-                  backgroundImage: `radial-gradient(circle at 20% -10%, rgba(${theme.vars.palette.primary.mainChannel} / ${theme.palette.mode === "light" ? "0.12" : "0.2"}), transparent 95%), radial-gradient(circle at 90% 0%, rgba(${theme.vars.palette.secondary.mainChannel} / ${theme.palette.mode === "light" ? "0.1" : "0.16"}), transparent 30%), linear-gradient(180deg, ${theme.vars.palette.background.default} 0%, ${theme.vars.palette.background.paper} 100%)`,
+                  backgroundImage: `radial-gradient(circle at 20% -10%, rgba(${theme.vars.palette.primary.mainChannel} / ${theme.palette.mode === "light" ? "0.12" : "0.2"}), transparent 15%), radial-gradient(circle at 90% 0%, rgba(${theme.vars.palette.secondary.mainChannel} / ${theme.palette.mode === "light" ? "0.31" : "0.16"}), transparent 70%), linear-gradient(180deg, ${theme.vars.palette.background.default} 100%, ${theme.vars.palette.background.paper} 10%)`,
                   backgroundAttachment: "fixed",
                 },
               }),
@@ -52,8 +52,11 @@ export default function AppTheme(props: AppThemeProps) {
             MuiPaper: {
               styleOverrides: {
                 root: ({ theme }) => ({
-                  backgroundImage: "none",
-                  border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
+                  // backgroundImage: "none",
+                  // backgroundColor: `${alpha(theme.palette.background.paper, 0.1)}`,
+                  // background: `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 0.8)} 0%, ${alpha(theme.palette.background.paper, 0.6)} 100%)`,
+                  border: `2px solid ${alpha(theme.palette.divider, 0.5)}`,
+                  borderRadius: 6,
                 }),
               },
             },
@@ -72,7 +75,7 @@ export default function AppTheme(props: AppThemeProps) {
                   backgroundImage: "none",
                   color: theme.vars.palette.text.primary,
                   backgroundColor: theme.vars.palette.background.paper,
-                  backdropFilter: "blur(12px)",
+                  backdropFilter: "blur(4px)",
                 }),
               },
             },
@@ -80,7 +83,7 @@ export default function AppTheme(props: AppThemeProps) {
               styleOverrides: {
                 root: ({ theme }) => ({
                   borderRadius: theme.shape.borderRadius,
-                  backgroundColor: alpha(theme.palette.background.paper, 0.7),
+                  backgroundColor: alpha(theme.palette.background.paper, 0.2),
                 }),
               },
             },
@@ -95,6 +98,7 @@ export default function AppTheme(props: AppThemeProps) {
                 },
                 containedPrimary: ({ theme }) => ({
                   boxShadow: `0 8px 20px ${alpha(theme.palette.primary.main, 0.25)}`,
+                  color: "rgb(255, 255, 255)",
                 }),
               },
             },
@@ -119,6 +123,11 @@ export default function AppTheme(props: AppThemeProps) {
               styleOverrides: {
                 paper: ({ theme }) => ({
                   borderRadius: theme.shape.borderRadius,
+                }),
+                backdrop: () => ({
+                  backgroundImage: "none",
+                  backgroundColor: "rgba(0, 0, 0, 0.32)",
+                  backdropFilter: "blur(2px)",
                 }),
               },
             },

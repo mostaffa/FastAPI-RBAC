@@ -99,6 +99,7 @@ export default function Disk() {
             </Typography>
             <Box sx={{ position: "relative" }}>
               <LinearProgress
+                aria-label="Disk usage progress"
                 variant="determinate"
                 value={usagePercent}
                 sx={{

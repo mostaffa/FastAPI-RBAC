@@ -141,6 +141,7 @@ export default function Memory() {
             </Typography>
             <Box sx={{ position: "relative" }}>
               <LinearProgress
+                aria-label="Memory Usage"
                 variant="determinate"
                 value={usagePercent}
                 sx={{

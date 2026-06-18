@@ -1,10 +1,10 @@
 import { lazy, Suspense } from "react"
 import { Routes, Route } from "react-router"
-import Loader from "../components/ui/loader/Loader"
 
-const Signin = lazy(() => import("../pages/signin/SignIn"))
-const Signup = lazy(() => import("../pages/signup/SignUp"))
-const Dashboard = lazy(() => import("../pages/dashboard/Dashboard"))
+const Signin = lazy(() => import("@/pages/signin/SignIn"))
+const Signup = lazy(() => import("@/pages/signup/SignUp"))
+const Dashboard = lazy(() => import("@/pages/dashboard/Dashboard"))
+const Loader = lazy(() => import("@/components/ui/loader/Loader"))
 
 export default function AppRouter() {
   return (

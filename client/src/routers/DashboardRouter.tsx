@@ -1,41 +1,24 @@
-import React from "react"
+import { lazy, Suspense } from "react"
 import { Routes, Route } from "react-router"
-import Loader from "@/components/ui/loader/Loader"
-// import { useAppSelector } from "../app/hooks"
-// import { selectUser, selectPermissions } from "../features/user/userSlice"
 import { useAuth } from "@/hooks/useAuth/useAuth"
 
-const Layout = React.lazy(() => import("@/pages/dashboard/layout/Layout"))
-const MainView = React.lazy(() => import("@/pages/dashboard/main/MainView"))
-const Dialogs = React.lazy(
-  () => import("@/pages/dashboard/notifications/Dialogs"),
-)
-const NotificationAlerts = React.lazy(
+const Loader = lazy(() => import("@/components/ui/loader/Loader"))
+const Dialogs = lazy(() => import("@/pages/dashboard/notifications/Dialogs"))
+const NotificationAlerts = lazy(
   () => import("@/pages/dashboard/notifications/NotificationAlerts"),
 )
 
-const Roles = React.lazy(() => import("@/pages/dashboard/admin/roles/Roles"))
-const Users = React.lazy(() => import("@/pages/dashboard/admin/users/Users"))
-const UserForm = React.lazy(
-  () => import("@/pages/dashboard/admin/users/UserForm"),
-)
-const Sensors = React.lazy(() => import("@/pages/dashboard/sensor/Sensor"))
-const Temperature = React.lazy(
-  () => import("@/pages/dashboard/monitoring"),
-)
-const Memory = React.lazy(
-  () => import("@/pages/dashboard/monitoring/Memory"),
-)
-const Cpu = React.lazy(() => import("@/pages/dashboard/monitoring/Cpu"))
-const Disk = React.lazy(
-  () => import("@/pages/dashboard/monitoring/Disk"),
-)
-const Services = React.lazy(
-  () => import("@/pages/dashboard/services/Services"),
-)
-const SystemInfo = React.lazy(
-  () => import("@/pages/dashboard/monitoring/SystemInfo"),
-)
+const Roles = lazy(() => import("@/pages/dashboard/admin/roles/Roles"))
+const Users = lazy(() => import("@/pages/dashboard/admin/users/Users"))
+const UserForm = lazy(() => import("@/pages/dashboard/admin/users/UserForm"))
+const Sensors = lazy(() => import("@/pages/dashboard/sensor/Sensor"))
+const Temperature = lazy(() => import("@/pages/dashboard/monitoring"))
+const Memory = lazy(() => import("@/pages/dashboard/monitoring/Memory"))
+const Cpu = lazy(() => import("@/pages/dashboard/monitoring/Cpu"))
+const Disk = lazy(() => import("@/pages/dashboard/monitoring/Disk"))
+const Services = lazy(() => import("@/pages/dashboard/services/Services"))
+const SystemInfo = lazy(() => import("@/pages/dashboard/monitoring/SystemInfo"))
+const LandingPage = lazy(() => import("@/pages/landing/LandingPage"))
 
 export default function DashboardRouter() {
   // const user = useAppSelector(selectUser)
@@ -46,58 +29,50 @@ export default function DashboardRouter() {
       <Route
         path="/me"
         element={
-          <React.Suspense fallback={<Loader />}>
+          <Suspense fallback={<Loader />}>
             <UserForm updateCurrentUser />
-          </React.Suspense>
-        }
-      />
-      <Route
-        path="/layout"
-        element={
-          <React.Suspense fallback={<Loader />}>
-            <Layout />
-          </React.Suspense>
+          </Suspense>
         }
       />
       <Route
         path="/sensors"
         element={
-          <React.Suspense fallback={<Loader />}>
+          <Suspense fallback={<Loader />}>
             <Sensors />
-          </React.Suspense>
+          </Suspense>
         }
       />
       <Route
         path="/notifications/dialogs"
         element={
-          <React.Suspense fallback={<Loader />}>
+          <Suspense fallback={<Loader />}>
             <Dialogs />
-          </React.Suspense>
+          </Suspense>
         }
       />
       <Route
         path="/notifications/alerts"
         element={
-          <React.Suspense fallback={<Loader />}>
+          <Suspense fallback={<Loader />}>
             <NotificationAlerts />
-          </React.Suspense>
+          </Suspense>
         }
       />
       <Route
         path="/*"
         element={
-          <React.Suspense fallback={<Loader />}>
-            <MainView />
-          </React.Suspense>
+          <Suspense fallback={<Loader />}>
+            <LandingPage />
+          </Suspense>
         }
       />
       {permissions?.includes("role:read") || user?.user.role?.id === 1 ? (
         <Route
           path="/admin/roles"
           element={
-            <React.Suspense fallback={<Loader />}>
+            <Suspense fallback={<Loader />}>
               <Roles />
-            </React.Suspense>
+            </Suspense>
           }
         />
       ) : null}
@@ -105,9 +80,9 @@ export default function DashboardRouter() {
         <Route
           path="/admin/users"
           element={
-            <React.Suspense fallback={<Loader />}>
+            <Suspense fallback={<Loader />}>
               <Users />
-            </React.Suspense>
+            </Suspense>
           }
         />
       ) : null}
@@ -116,41 +91,41 @@ export default function DashboardRouter() {
           <Route
             path="/manage/system"
             element={
-              <React.Suspense fallback={<Loader />}>
+              <Suspense fallback={<Loader />}>
                 <SystemInfo />
-              </React.Suspense>
+              </Suspense>
             }
           />
           <Route
             path="/manage/temperature"
             element={
-              <React.Suspense fallback={<Loader />}>
+              <Suspense fallback={<Loader />}>
                 <Temperature />
-              </React.Suspense>
+              </Suspense>
             }
           />
           <Route
             path="/manage/memory"
             element={
-              <React.Suspense fallback={<Loader />}>
+              <Suspense fallback={<Loader />}>
                 <Memory />
-              </React.Suspense>
+              </Suspense>
             }
           />
           <Route
             path="/manage/cpu"
             element={
-              <React.Suspense fallback={<Loader />}>
+              <Suspense fallback={<Loader />}>
                 <Cpu />
-              </React.Suspense>
+              </Suspense>
             }
           />
           <Route
             path="/manage/disk"
             element={
-              <React.Suspense fallback={<Loader />}>
+              <Suspense fallback={<Loader />}>
                 <Disk />
-              </React.Suspense>
+              </Suspense>
             }
           />
         </>
@@ -159,9 +134,9 @@ export default function DashboardRouter() {
         <Route
           path="/services"
           element={
-            <React.Suspense fallback={<Loader />}>
+            <Suspense fallback={<Loader />}>
               <Services />
-            </React.Suspense>
+            </Suspense>
           }
         />
       ) : null}

@@ -14,10 +14,7 @@ import MuiCard from "@mui/material/Card"
 import { styled } from "@mui/material/styles"
 import AppTheme from "@/theme/AppTheme"
 import ColorModeSelect from "@/theme/ColorModeSelect"
-import {
-  GoogleIcon,
-  FacebookIcon,
-} from "@/components/signin/CustomIcons"
+import { GoogleIcon, FacebookIcon } from "@/components/signin/CustomIcons"
 import { useForm, Controller } from "react-hook-form"
 import { useAuth } from "@/hooks/useAuth/useAuth"
 

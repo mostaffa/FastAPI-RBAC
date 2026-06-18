@@ -19,10 +19,6 @@ register_services_handlers(socket_event)
 
 @socket_event
 async def disconnect(sid: str):
-    terminal = state.terminal_sessions.pop(sid, None)
-    if terminal:
-        await terminal.stop()
-
     await cleanup_sensor_subscriptions(sid)
     await cleanup_services_subscriptions(sid)
 

@@ -1,10 +1,10 @@
 # app/main.py
-from pathlib import Path
+# from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
+# from fastapi.responses import FileResponse
+# from fastapi.staticfiles import StaticFiles
 from app.api.v1.api import api_router
 from app.websockets.connection_manager import socket_app
 # from app.models.user import User, Role
@@ -22,7 +22,7 @@ app = FastAPI(
 # 1. Setup CORS so your React app (usually on port 5173) can talk to your API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*", "https://nest.mostafaothman.com"],  # For production, replace with specific IP of your Pi
+    allow_origins=["http://rbac.localhost", "https://nest.mostafaothman.com"],  # For production, replace with specific IP of your Pi
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,23 +31,23 @@ app.add_middleware(
 # 2. Include REST API routes
 app.include_router(api_router, prefix="/api/v1")
 
-# 3. Mount Socket.IO
+# # 3. Mount Socket.IO
 app.mount("/ws", socket_app)
 
-STATIC_ROOT = Path("app/static")
-ASSETS_DIR = STATIC_ROOT / "assets"
-INDEX_FILE = STATIC_ROOT / "index.html"
+# STATIC_ROOT = Path("app/static")
+# ASSETS_DIR = STATIC_ROOT / "assets"
+# INDEX_FILE = STATIC_ROOT / "index.html"
 
-# 4. Mount static files only when frontend assets are present.
-if ASSETS_DIR.exists():
-    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+# # 4. Mount static files only when frontend assets are present.
+# if ASSETS_DIR.exists():
+#     app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 
 
-if INDEX_FILE.exists():
-    @app.get("/{path_param:path}")
-    async def serve_react(path_param: str):
-        """
-        Serve the React app for all unmatched routes (SPA catch-all)
-        React Router will handle the routing on the client side
-        """
-        return FileResponse(str(INDEX_FILE))
+# if INDEX_FILE.exists():
+#     @app.get("/{path_param:path}")
+#     async def serve_react(path_param: str):
+#         """
+#         Serve the React app for all unmatched routes (SPA catch-all)
+#         React Router will handle the routing on the client side
+#         """
+#         return FileResponse(str(INDEX_FILE))
