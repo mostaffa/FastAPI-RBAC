@@ -32,21 +32,30 @@ Role (id, name) [e.g., "admin", "user", "viewer"]
 Permissions (id, name) [e.g., "user:read", "role:create", "role:delete"]
 ```
 
-### Built-in Roles
+### Seeded Role
 
-| Role | Default Permissions | Use Case |
-|------|---------------------|----------|
-| **Superuser (ID: 1)** | All permissions | System administrator |
-| **Admin** | Create/Read/Update/Delete all resources | Manager access |
-| **User** | Create/Read own resources, manage permissions | Standard user |
-| **Viewer** | Read-only access | Audit/monitoring |
+Only one role is created by default — additional roles (e.g. `admin`, `viewer`)
+are created at runtime via the Roles API.
+
+| Role | Permissions | Use Case |
+|------|-------------|----------|
+| **`superuser`** | All 16 permissions | System administrator |
+
+The default admin user (`admin` / `admin1234567`, configurable via `.env`) is
+assigned the `superuser` role on first run.
 
 ### Permission Model
 
-Permissions follow a `resource:action` naming convention:
-- `user:read`, `user:create`, `user:update`, `user:delete`
-- `role:read`, `role:create`, `role:update`, `role:delete`
-- `permission:read`, `permission:assign`
+Permissions follow a `resource:action` naming convention. The 16 seeded
+permissions are:
+
+- `user:create`, `user:read`, `user:update`, `user:delete`
+- `role:create`, `role:read`, `role:update`, `role:delete`
+- `permission:create`, `permission:read`, `permission:update`, `permission:delete`
+- `sensors:read`, `terminal:read`, `services:read`, `services:update`
+
+> See **[backend/SEEDING.md](backend/SEEDING.md)** for how seeding works, what
+> gets created, and how to reset/extend it.
 
 ---
 
@@ -54,10 +63,22 @@ Permissions follow a `resource:action` naming convention:
 
 ## 🐳 Docker Compose (API + Postgres + Nginx UI)
 
-This project now includes a full Docker Compose setup with:
-- `api`: FastAPI service (runs Alembic migrations on startup)
-- `postgres`: PostgreSQL 16
-- `ui`: React build served by Nginx with reverse proxy to API/WebSocket
+This project includes a full Docker Compose setup with three services:
+
+- **`postgres`** — PostgreSQL 16 with a healthcheck (the `api` waits for it).
+- **`api`** — FastAPI service. On startup it runs **`app/core/bootstrap.py`**,
+  which waits for the DB, applies migrations, **seeds** the default data, and
+  performs a full reset if `SEED_VERSION` changed (see
+  [backend/SEEDING.md](backend/SEEDING.md)).
+- **`ui`** — React build served by **Nginx** (Brotli/Gzip pre-compressed
+  assets) that reverse-proxies `/api` and `/ws` to the API.
+
+Configuration comes from a **single `.env` at the project root** — copy the
+template first:
+
+```bash
+cp .env.example .env
+```
 
 ### Start All Services
 
@@ -65,11 +86,14 @@ This project now includes a full Docker Compose setup with:
 docker compose up --build -d
 ```
 
+The database is migrated and seeded automatically on first start — no manual
+steps required. Default login: **`admin` / `admin1234567`**.
+
 ### Access Services
 
-- UI: `http://localhost:8080`
-- API docs: `http://localhost:4000/api/docs`
-- API via UI proxy: `http://localhost:8080/api/...`
+- **UI**: `http://localhost:8088` (override with `NGINX_PORT` in `.env`)
+- **API docs (Swagger)**: `http://localhost:4000/api/docs`
+- **API via UI proxy**: `http://localhost:8088/api/...`
 
 ### Stop Services
 
@@ -77,10 +101,11 @@ docker compose up --build -d
 docker compose down
 ```
 
-### Reset Database Volume
+### Reset Database (wipe all data)
 
 ```bash
-docker compose down -v
+docker compose down -v        # drops the Postgres volume, full fresh start
+# — or — bump SEED_VERSION in .env to reset on the next start (see SEEDING.md)
 ```
 
 The Compose file is at `docker-compose.yml` in the project root.
@@ -96,48 +121,77 @@ The Compose file is at `docker-compose.yml` in the project root.
 ```bash
 # Clone the repository
 git clone git@github.com:mostaffa/FastAPI-RBAC.git
-cd FastAPI-RBAC/backend
+cd FastAPI-RBAC
 
-# Create and activate virtual environment
+# Create the single .env at the project root (used by backend + compose + Vite)
+cp .env.example .env
+
+# Set up the backend virtual environment
+cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
-
-# Create .env file
-cp .env.example .env
 ```
 
 ### 2️⃣ Environment Configuration
 
-Create a `.env` file in the project root by copying `.env.example`:
+There is a **single `.env` at the project root** that configures the backend,
+Docker Compose, and the Vite dev server. Copy the template and adjust values:
+
+```bash
+cp .env.example .env
+```
+
+Key variables (`POSTGRES_*` are the source of truth for the DB connection —
+under Docker the `api` service overrides `POSTGRES_HOST` to the `postgres`
+service name):
 
 ```env
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/rf24_iot
+POSTGRES_HOST=localhost          # compose overrides to "postgres"
+POSTGRES_PORT=5432
+POSTGRES_USER=rbac
+POSTGRES_PASSWORD=123456789
+POSTGRES_DB=rbac
+# DATABASE_URL=...               # optional explicit override (external DB)
 
-# JWT Secrets
-SECRET_KEY=your-super-secret-key-change-in-production
+# Security / JWT
+SECRET_KEY=change-me-in-production
 ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=100000000
+ACCESS_TOKEN_EXPIRE_MINUTES=60
 
-# Server
-HOST=0.0.0.0
-PORT=4000
+# Default seeded admin (see backend/SEEDING.md)
+DEFAULT_USER=admin
+DEFAULT_PASSWORD=admin1234567
+ADMIN_EMAIL=admin@example.com
+
+# Bump to force a full DB reset (drop + re-migrate + reseed) on next start
+SEED_VERSION=1
 ```
+
+See [`.env.example`](.env.example) for the complete annotated list (CORS,
+connection pool, Socket.IO, monitoring intervals, frontend/nginx).
 
 ### 3️⃣ Database Setup
 
+The backend **bootstraps the database automatically on startup** (waits for the
+DB, migrates, seeds, and resets if `SEED_VERSION` changed). To prepare it
+explicitly before running the server:
+
 ```bash
-# Run migrations to create tables and seed initial data
-python -m alembic upgrade head
+# Full bootstrap: wait-for-db → migrate → seed (idempotent)
+python -m app.core.bootstrap
 ```
 
-This will:
-- Create all database tables (User, Role, Permission, RolePermission)
-- Seed the superuser role and default permissions
-- Initialize example users (admin, regular user)
+This creates all tables (User, Role, Permission, RolePermission), seeds the
+**16 permissions**, the **`superuser` role**, and the **default admin user**
+from `.env`. It is safe to re-run.
+
+For manual/granular control (`--reset`, `--seed`, `--status`, …) and the full
+reset workflow, see **[backend/SEEDING.md](backend/SEEDING.md)** and
+[backend/DATABASE_MANAGEMENT.md](backend/DATABASE_MANAGEMENT.md).
 
 ### 4️⃣ Run the Server
 
@@ -194,6 +248,15 @@ GET    /api/v1/permissions                    List all permissions (requires: pe
 POST   /api/v1/roles/{role_id}/permissions/{permission_id}     Assign permission to role
 DELETE /api/v1/roles/{role_id}/permissions/{permission_id}     Remove permission from role
 ```
+
+#### 🖥️ System & Services (IoT monitoring)
+```
+GET    /api/v1/system/...      System metrics (requires: sensors:read / terminal:read)
+GET    /api/v1/services/...    Service status (requires: services:read)
+POST   /api/v1/services/...    Service control  (requires: services:update)
+```
+> Real-time sensor/service streams are delivered over Socket.IO at `/ws`
+> (see the WebSocket section below).
 
 ---
 
@@ -437,9 +500,11 @@ backend/
 │   │           ├── roles.py  # Role management
 │   │           └── permission.py
 │   ├── core/
+│   │   ├── config.py         # Settings (single source of truth)
 │   │   ├── security.py       # JWT and password utilities
 │   │   ├── rbac.py           # Permission decorators
-│   │   └── seed_db.py        # Initial data
+│   │   ├── bootstrap.py      # Startup: wait-for-db, migrate, seed, reset
+│   │   └── seed_db.py        # Seed data (permissions, role, admin)
 │   ├── db/
 │   │   └── session.py        # Database connection
 │   ├── models/

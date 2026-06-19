@@ -1,6 +1,13 @@
 # Database Reset and Seed Guide
 
-This guide explains how to use the database management scripts for the FastAPI RBAC application.
+This guide explains how to use the **manual** database management scripts for
+the FastAPI RBAC application.
+
+> **Note:** Seeding now runs **automatically on backend startup** via
+> `app/core/bootstrap.py`, and a full reset can be triggered by bumping
+> `SEED_VERSION` in `.env`. For the recommended workflow and an explanation of
+> the bootstrap/`SEED_VERSION` mechanism, see **[SEEDING.md](SEEDING.md)**. The
+> scripts below remain useful for ad-hoc local operations.
 
 ## Available Scripts
 
@@ -162,10 +169,11 @@ python manage_db.py --status
 
 When you run a seed operation, the following is created:
 
-### Permissions (13 total)
+### Permissions (16 total)
 - `user:create`, `user:read`, `user:update`, `user:delete`
 - `role:create`, `role:read`, `role:update`, `role:delete`
 - `permission:create`, `permission:read`, `permission:update`, `permission:delete`
+- `sensors:read`, `terminal:read`, `services:read`, `services:update`
 
 ### Roles
 - `superuser`: Role with all permissions
@@ -178,10 +186,16 @@ When you run a seed operation, the following is created:
 
 ## Database Credentials
 
-The database connection is configured in `.env`:
+The database connection is configured in the **project-root `.env`** via the
+`POSTGRES_*` variables (the app and Alembic build the URL from them; set
+`DATABASE_URL` only to point at an external DB):
 
 ```
-DATABASE_URL=postgresql://rbac:sudoAptUpdate@localhost/rbac
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=rbac
+POSTGRES_PASSWORD=123456789
+POSTGRES_DB=rbac
 ```
 
 The PostgreSQL user `rbac` needs the following privileges:
@@ -279,18 +293,25 @@ bash start.sh
 
 ## Environment Variables
 
-The scripts use the following environment variables from `.env`:
+The scripts use the following environment variables from the project-root `.env`:
 
-- `DATABASE_URL`: PostgreSQL connection string
-- `DEFAULT_USER`: Default admin username (default: "superuser")
+- `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB`: PostgreSQL connection (source of truth)
+- `DATABASE_URL`: optional explicit connection string that overrides the `POSTGRES_*` values when set
+- `SEED_VERSION`: bump to force a full reset + reseed on next backend start (see [SEEDING.md](SEEDING.md))
+- `DEFAULT_USER`: Default admin username (code fallback: `superuser`; `.env` sets `admin`)
 - `DEFAULT_PASSWORD`: Default admin password
 - `ADMIN_EMAIL`: Default admin email address
 - `FASTAPI_CACHE_CLEAR_TARGETS`: Comma-separated list of cache targets to clear
 
-Example `.env`:
+Example `.env` (see the project-root [`.env.example`](../.env.example) for the
+full annotated list):
 
 ```env
-DATABASE_URL=postgresql://rbac:sudoAptUpdate@localhost/rbac
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=rbac
+POSTGRES_PASSWORD=123456789
+POSTGRES_DB=rbac
 SQLALCHEMY_TRACK_MODIFICATIONS=False
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 ALGORITHM=HS256
@@ -298,6 +319,7 @@ SECRET_KEY=Access_KeyForPROJECT
 DEFAULT_USER=admin
 DEFAULT_PASSWORD=admin1234567
 ADMIN_EMAIL=admin@example.com
+SEED_VERSION=1
 ```
 
 ## Performance Considerations

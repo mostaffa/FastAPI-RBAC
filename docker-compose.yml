@@ -21,6 +21,10 @@ services:
     env_file:
       - ./.env
     environment:
+      # Override POSTGRES_HOST from .env (which is "localhost" for running the
+      # app directly on the host) with the compose service name. config.py /
+      # alembic build DATABASE_URL from POSTGRES_*, so the api now connects to
+      # the postgres container instead of to itself.
       POSTGRES_HOST: postgres
     depends_on:
       postgres:

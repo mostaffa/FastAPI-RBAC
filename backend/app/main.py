@@ -1,14 +1,18 @@
-# app/main.py
-# from pathlib import Path
+"""FastAPI application entry point with Socket.IO, REST API, and lifecycle management."""
+
+from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-# from fastapi.responses import FileResponse
-# from fastapi.staticfiles import StaticFiles
+
 from app.api.v1.api import api_router
+from app.core.config import CORS_ORIGINS
+from app.db.session import init_db, shutdown_db
 from app.websockets.connection_manager import socket_app
-# from app.models.user import User, Role
-# import app.models
+
+# ---------------------------------------------------------------------------
+# Application factory
+# ---------------------------------------------------------------------------
 
 app = FastAPI(
     title="RPi IoT Gateway",
@@ -16,38 +20,43 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json"
+    openapi_url="/api/openapi.json",
 )
 
-# 1. Setup CORS so your React app (usually on port 5173) can talk to your API
+# ---------------------------------------------------------------------------
+# CORS middleware — restrict to known origins in production
+# ---------------------------------------------------------------------------
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://rbac.localhost", "https://nest.mostafaothman.com"],  # For production, replace with specific IP of your Pi
+    allow_origins=CORS_ORIGINS if CORS_ORIGINS else [
+        "http://rbac.localhost",
+        "https://nest.mostafaothman.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 2. Include REST API routes
-app.include_router(api_router, prefix="/api/v1")
+# ---------------------------------------------------------------------------
+# Mount routes
+# ---------------------------------------------------------------------------
 
-# # 3. Mount Socket.IO
+app.include_router(api_router, prefix="/api/v1")
 app.mount("/ws", socket_app)
 
-# STATIC_ROOT = Path("app/static")
-# ASSETS_DIR = STATIC_ROOT / "assets"
-# INDEX_FILE = STATIC_ROOT / "index.html"
 
-# # 4. Mount static files only when frontend assets are present.
-# if ASSETS_DIR.exists():
-#     app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+# ---------------------------------------------------------------------------
+# Lifecycle hooks — database initialization and cleanup
+# ---------------------------------------------------------------------------
+
+@app.on_event("startup")
+async def startup() -> None:
+    """Initialize database connection pool on startup."""
+    init_db()
 
 
-# if INDEX_FILE.exists():
-#     @app.get("/{path_param:path}")
-#     async def serve_react(path_param: str):
-#         """
-#         Serve the React app for all unmatched routes (SPA catch-all)
-#         React Router will handle the routing on the client side
-#         """
-#         return FileResponse(str(INDEX_FILE))
+@app.on_event("shutdown")
+async def shutdown() -> None:
+    """Dispose database connection pool on shutdown."""
+    shutdown_db()

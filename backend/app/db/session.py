@@ -1,35 +1,91 @@
-import os
-from dotenv import load_dotenv
-from pathlib import Path
-from sqlmodel import Session, create_engine
+"""Database session management with proper connection pooling."""
 
-# Load environment variables from .env file
-env_path = Path(__file__).resolve().parents[3] / ".env"
-load_dotenv(dotenv_path=env_path)
-default_database_url = "postgresql://rbac:123456789@localhost/rbac"
+from __future__ import annotations
 
-database_url_from_env = os.getenv("DATABASE_URL")
-postgres_user = os.getenv("POSTGRES_USER")
-postgres_password = os.getenv("POSTGRES_PASSWORD")
-postgres_db = os.getenv("POSTGRES_DB")
-postgres_host = os.getenv("POSTGRES_HOST")
-postgres_port = os.getenv("POSTGRES_PORT", "5432")
+import threading
+from typing import Generator
 
-# In containers, prefer explicit POSTGRES_* values when host is provided.
-if postgres_host and postgres_user and postgres_password and postgres_db:
-    DATABASE_URL = f"postgresql://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}"
-elif database_url_from_env and "${" not in database_url_from_env:
-    DATABASE_URL = database_url_from_env
-elif postgres_user and postgres_password and postgres_db:
-    DATABASE_URL = f"postgresql://{postgres_user}:{postgres_password}@localhost:{postgres_port}/{postgres_db}"
-else:
-    DATABASE_URL = default_database_url
+from sqlalchemy.pool import QueuePool
+from sqlmodel import Session, SQLModel, create_engine
 
-print(f"Using database URL: {DATABASE_URL}")
+from app.core.config import (
+    DATABASE_URL,
+    DB_ECHO,
+    DB_MAX_OVERFLOW,
+    DB_POOL_RECYCLE,
+    DB_POOL_SIZE,
+    DB_POOL_TIMEOUT,
+)
 
-"""Create the database engine and session generator."""
-engine = create_engine(DATABASE_URL, echo=True)
+# ---------------------------------------------------------------------------
+# Engine — created once with proper pooling configuration
+# ---------------------------------------------------------------------------
+engine = create_engine(
+    DATABASE_URL,
+    echo=DB_ECHO,
+    poolclass=QueuePool,
+    pool_size=DB_POOL_SIZE,
+    max_overflow=DB_MAX_OVERFLOW,
+    pool_timeout=DB_POOL_TIMEOUT,
+    pool_recycle=DB_POOL_RECYCLE,
+)
 
-def get_session():
+# ---------------------------------------------------------------------------
+# Synchronous session generator (for FastAPI Depends and manual next() use)
+# ---------------------------------------------------------------------------
+
+def get_session() -> Generator[Session, None, None]:
+    """Yield a database session and ensure it's closed after use.
+
+    Kept as a plain generator (no @contextmanager): FastAPI's ``Depends`` and
+    the WebSocket handlers both rely on the generator protocol — the latter
+    call ``next(get_session())`` / ``db_gen.close()`` directly, which a
+    context-manager wrapper would break.
+    """
     with Session(engine) as session:
         yield session
+
+
+# ---------------------------------------------------------------------------
+# Lifecycle helpers for startup/shutdown
+# ---------------------------------------------------------------------------
+
+def init_db() -> None:
+    """Initialize database — run migrations, create tables if needed."""
+    # This is called on FastAPI startup
+    pass
+
+
+def shutdown_db() -> None:
+    """Shutdown database — dispose connection pool."""
+    engine.dispose()
+
+
+# ---------------------------------------------------------------------------
+# Convenience: create all tables (for development/testing only)
+# ---------------------------------------------------------------------------
+
+def create_tables() -> None:
+    """Create all tables defined in models. Development use only."""
+    SQLModel.metadata.create_all(engine)
+
+
+# ---------------------------------------------------------------------------
+# Thread-local session for background tasks
+# ---------------------------------------------------------------------------
+
+_local = threading.local()
+
+
+def get_thread_session() -> Session:
+    """Get a thread-local session for use in background tasks."""
+    if not hasattr(_local, "session"):
+        _local.session = Session(engine)
+    return _local.session
+
+
+def close_thread_session() -> None:
+    """Close thread-local session if it exists."""
+    if hasattr(_local, "session"):
+        _local.session.close()
+

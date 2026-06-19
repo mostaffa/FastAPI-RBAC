@@ -11,3 +11,5 @@ build/
 *.log
 backend/app/static/
 scripts/
+request.http
+t.md

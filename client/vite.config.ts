@@ -8,13 +8,6 @@ import nodeZlib from "node:zlib"
 import browserslist from "browserslist"
 import { browserslistToTargets } from "lightningcss"
 
-// Load environment variables from .env file
-// import dotenv from "dotenv"
-// dotenv.config({
-//   path: path.resolve(import.meta.dirname, "../.env"),
-// })
-// const env = process.env
-
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isAnalyze = mode === "analyze"
@@ -56,12 +49,12 @@ export default defineConfig(({ mode }) => {
       allowedHosts: ["nest.mostafaothman.com", "ubuntu26"],
       proxy: {
         "/api": {
-          target: "http://localhost:8000",
+          target: "http://localhost:4001",
           changeOrigin: true,
           secure: true,
         },
         "/ws": {
-          target: "http://localhost:8000",
+          target: "http://localhost:4001",
           changeOrigin: true,
           secure: true,
           ws: true,

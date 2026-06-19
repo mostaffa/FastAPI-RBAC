@@ -1,3 +1,14 @@
+"""WebSocket connection manager and Socket.IO registration.
+
+This module registers all Socket.IO event handlers and provides
+a simple FastAPI WebSocket manager for non-socket endpoints.
+
+NOTE: The duplicate / websocket endpoint has been removed — Socket.IO
+handles its own connection lifecycle via the ASGI app mounted at /ws.
+"""
+
+from __future__ import annotations
+
 from typing import Any
 
 from fastapi import WebSocket
@@ -8,17 +19,25 @@ from app.websockets.services_handlers import (
     cleanup_services_subscriptions,
     register_services_handlers,
 )
-from app.websockets.socket_server import emit, socket_app, socket_disconnect, socket_event
+from app.websockets.socket_server import emit, sio, socket_app
 
 
-register_connection_handlers(socket_event)
-# register_terminal_handlers(socket_event)
-register_sensor_handlers(socket_event)
-register_services_handlers(socket_event)
+# ---------------------------------------------------------------------------
+# Register all event handlers (auth, sensors, services)
+# ---------------------------------------------------------------------------
+
+register_connection_handlers(sio.event)
+register_sensor_handlers(sio.event)
+register_services_handlers(sio.event)
 
 
-@socket_event
-async def disconnect(sid: str):
+# ---------------------------------------------------------------------------
+# Disconnect handler — cleanup subscriptions and user state
+# ---------------------------------------------------------------------------
+
+@sio.event
+async def disconnect(sid: str) -> None:
+    """Handle client disconnection — cleanup all resources."""
     await cleanup_sensor_subscriptions(sid)
     await cleanup_services_subscriptions(sid)
 
@@ -31,23 +50,43 @@ async def disconnect(sid: str):
         state.user_sids.pop(user_id, None)
 
 
+# ---------------------------------------------------------------------------
+# Broadcast helper — send event to all connected clients
+# ---------------------------------------------------------------------------
+
 async def broadcast(event: str, data: Any) -> None:
+    """Broadcast an event to all connected Socket.IO clients."""
     await emit(event, data)
 
 
+# ---------------------------------------------------------------------------
+# User disconnection helper — force disconnect all connections for a user
+# ---------------------------------------------------------------------------
+
 async def disconnect_user(user_id: int) -> None:
+    """Force disconnect all WebSocket connections for a specific user."""
     sids = list(state.user_sids.get(user_id, []))
     for sid in sids:
-        await socket_disconnect(sid)
+        await sio.disconnect(sid)
 
+
+# ---------------------------------------------------------------------------
+# FastAPI WebSocket manager (for non-socket endpoints if needed)
+# ---------------------------------------------------------------------------
 
 class ConnectionManager:
-    """Simple manager for FastAPI WebSocket connections."""
-    
-    async def connect(self, websocket: WebSocket):
+    """Simple manager for raw FastAPI WebSocket connections.
+
+    Note: Most WebSocket functionality is handled by Socket.IO above.
+    This manager exists for any raw WebSocket endpoints that may be added later.
+    """
+
+    async def connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
-    
-    async def disconnect(self, websocket: WebSocket):
+
+    async def disconnect(self, websocket: WebSocket) -> None:
         pass
 
+
 manager = ConnectionManager()
+
