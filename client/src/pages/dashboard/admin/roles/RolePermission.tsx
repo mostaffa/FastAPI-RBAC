@@ -1,13 +1,13 @@
-import type React from "react"
-import { useCallback, useEffect, useState } from "react"
-import { useAppDispatch } from "@/app/hooks"
-import {
-  useGetRolePermissionsQuery,
-  rolesApiSlice,
-} from "@/features/user/rolesApiSlice"
-import { useGetPermissionsQuery } from "@/features/user/permissionApiSlice"
 import type { PermissionRead } from "@/api"
 import { RolesService } from "@/api"
+import { useAppDispatch } from "@/app/hooks"
+import Loader from "@/components/ui/loader/Loader"
+import { useGetPermissionsQuery } from "@/features/user/permissionApiSlice"
+import {
+  rolesApiSlice,
+  useGetRolePermissionsQuery,
+} from "@/features/user/rolesApiSlice"
+import useNotifications from "@/hooks/useNotifications/useNotifications"
 import Alert from "@mui/material/Alert"
 import Box from "@mui/material/Box"
 import Card from "@mui/material/Card"
@@ -17,10 +17,9 @@ import Grid from "@mui/material/Grid"
 import Stack from "@mui/material/Stack"
 import Switch from "@mui/material/Switch"
 import Typography from "@mui/material/Typography"
-import Loader from "@/components/ui/loader/Loader"
-import useNotifications from "@/hooks/useNotifications/useNotifications"
+import { useCallback, useEffect, useState, type FC } from "react"
 
-const RolePermission: React.FC<{ roleId: number }> = ({ roleId }) => {
+const RolePermission: FC<{ roleId: number }> = ({ roleId }) => {
   const dispatch = useAppDispatch()
   const notifications = useNotifications()
   const [pendingPermissionId, setPendingPermissionId] = useState<number | null>(

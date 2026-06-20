@@ -6,14 +6,14 @@ import type { UserOut } from "@/api"
 import { ApiError, AuthService } from "@/api"
 import { useAppDispatch, useAppSelector } from "@/app/hooks"
 import {
-  setUser,
-  clearUser,
   addPermission,
+  clearUser,
   removePermission,
   selectPermissions,
+  setUser,
 } from "@/features/user/userSlice"
+import { useEffect, useState } from "react"
 import { AuthContext } from "./AuthContext"
-import { useState, useEffect } from "react"
 
 // NOTE: This provider should wrap the app at a high level (e.g. in main.tsx)
 // so that authentication state is available to all child components.

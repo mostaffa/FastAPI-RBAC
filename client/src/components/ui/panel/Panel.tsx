@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react"
-import Grid from "@mui/material/Grid"
-import IconButton from "@mui/material/IconButton"
 import CloseIcon from "@mui/icons-material/Close"
+import CropDinIcon from "@mui/icons-material/CropDin"
 import FilterNoneIcon from "@mui/icons-material/FilterNone"
 import MinimizeIcon from "@mui/icons-material/Minimize"
-import CropDinIcon from "@mui/icons-material/CropDin"
 import { useTheme } from "@mui/material"
 import Collapse from "@mui/material/Collapse"
+import Grid from "@mui/material/Grid"
+import IconButton from "@mui/material/IconButton"
+import Paper from "@mui/material/Paper"
 import Typography from "@mui/material/Typography"
 import type { Theme } from "@mui/material/styles"
 import type { SystemStyleObject } from "@mui/system"
-import Paper from "@mui/material/Paper"
+import { isValidElement, useEffect, useState } from "react"
 
 type SxProps<T extends object = Theme> =
   | SystemStyleObject<T>
@@ -152,7 +152,7 @@ export const Panel: React.FC<PanelProps> = ({
             {title}
           </Typography>
         )}
-        {React.isValidElement(title) && (
+        {isValidElement(title) && (
           <Grid
             justifySelf={"start"}
             flexGrow={1}

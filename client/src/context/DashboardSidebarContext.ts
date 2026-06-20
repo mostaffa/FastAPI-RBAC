@@ -1,6 +1,6 @@
-import * as React from "react"
+import { createContext } from "react"
 
-const DashboardSidebarContext = React.createContext<{
+const DashboardSidebarContext = createContext<{
   onPageItemClick: (id: string, hasNestedNavigation: boolean) => void
   mini: boolean
   fullyExpanded: boolean

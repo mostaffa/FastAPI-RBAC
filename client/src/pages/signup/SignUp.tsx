@@ -1,25 +1,25 @@
-import * as React from "react"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
+import MuiCard from "@mui/material/Card"
 import Checkbox from "@mui/material/Checkbox"
 import CssBaseline from "@mui/material/CssBaseline"
 import Divider from "@mui/material/Divider"
+import FormControl from "@mui/material/FormControl"
 import FormControlLabel from "@mui/material/FormControlLabel"
 import FormLabel from "@mui/material/FormLabel"
-import FormControl from "@mui/material/FormControl"
 import Link from "@mui/material/Link"
+import Stack from "@mui/material/Stack"
+import { styled } from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import Typography from "@mui/material/Typography"
-import Stack from "@mui/material/Stack"
-import MuiCard from "@mui/material/Card"
-import { styled } from "@mui/material/styles"
-import AppTheme from "../../theme/AppTheme"
-import ColorModeSelect from "../../theme/ColorModeSelect"
+import { useState } from "react"
 import {
-  GoogleIcon,
   FacebookIcon,
+  GoogleIcon,
   SitemarkIcon,
 } from "../../components/signup/CustomIcons"
+import AppTheme from "../../theme/AppTheme"
+import ColorModeSelect from "../../theme/ColorModeSelect"
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -60,12 +60,12 @@ const SignUpContainer = styled(Stack)(({ theme }) => ({
 }))
 
 export default function SignUp(props: { disableCustomTheme?: boolean }) {
-  const [emailError, setEmailError] = React.useState(false)
-  const [emailErrorMessage, setEmailErrorMessage] = React.useState("")
-  const [passwordError, setPasswordError] = React.useState(false)
-  const [passwordErrorMessage, setPasswordErrorMessage] = React.useState("")
-  const [nameError, setNameError] = React.useState(false)
-  const [nameErrorMessage, setNameErrorMessage] = React.useState("")
+  const [emailError, setEmailError] = useState(false)
+  const [emailErrorMessage, setEmailErrorMessage] = useState("")
+  const [passwordError, setPasswordError] = useState(false)
+  const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
+  const [nameError, setNameError] = useState(false)
+  const [nameErrorMessage, setNameErrorMessage] = useState("")
 
   const validateInputs = () => {
     const email = document.getElementById("email") as HTMLInputElement
@@ -163,7 +163,7 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
                 variant="outlined"
                 error={emailError}
                 helperText={emailErrorMessage}
-                color={passwordError ? "error" : "primary"}
+                color={emailError ? "error" : "primary"}
               />
             </FormControl>
             <FormControl>

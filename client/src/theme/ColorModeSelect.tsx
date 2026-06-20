@@ -1,7 +1,7 @@
-import { useColorScheme } from "@mui/material/styles"
 import MenuItem from "@mui/material/MenuItem"
 import type { SelectProps } from "@mui/material/Select"
 import Select from "@mui/material/Select"
+import { useColorScheme } from "@mui/material/styles"
 
 export default function ColorModeSelect(props: SelectProps) {
   const { mode, setMode } = useColorScheme()

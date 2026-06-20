@@ -1,7 +1,7 @@
-import * as React from "react"
-import type { ShowNotification, CloseNotification } from "./useNotifications"
+import { createContext } from "react"
+import type { CloseNotification, ShowNotification } from "./useNotifications"
 
-const NotificationsContext = React.createContext<{
+const NotificationsContext = createContext<{
   show: ShowNotification
   close: CloseNotification
 } | null>(null)

@@ -32,6 +32,9 @@ app.add_middleware(
     allow_origins=CORS_ORIGINS if CORS_ORIGINS else [
         "http://rbac.localhost",
         "https://nest.mostafaothman.com",
+        "https://ubuntu26:4000",
+        "http://ubuntu26:3000",
+        "http://localhost:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],

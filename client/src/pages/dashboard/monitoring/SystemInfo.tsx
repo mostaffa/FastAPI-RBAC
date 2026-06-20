@@ -1,4 +1,4 @@
-import * as React from "react"
+import { useGetSystemInfoQuery } from "@/features/sensors/systemApiSlice"
 import ComputerIcon from "@mui/icons-material/Computer"
 import DnsIcon from "@mui/icons-material/Dns"
 import MemoryIcon from "@mui/icons-material/Memory"
@@ -17,7 +17,7 @@ import Paper from "@mui/material/Paper"
 import Skeleton from "@mui/material/Skeleton"
 import Stack from "@mui/material/Stack"
 import Typography from "@mui/material/Typography"
-import { useGetSystemInfoQuery } from "@/features/sensors/systemApiSlice"
+import { useCallback } from "react"
 
 function formatBytes(bytes?: number | null): string {
   if (bytes === null || bytes === undefined) return "N/A"
@@ -136,7 +136,7 @@ export default function SystemInfo() {
   })
 
   const { data, isLoading, isFetching, isError } = query
-  const handleRefetch = React.useCallback(() => {
+  const handleRefetch = useCallback(() => {
     void query.refetch()
   }, [query])
 

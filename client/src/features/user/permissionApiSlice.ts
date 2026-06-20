@@ -1,6 +1,6 @@
+import type { PermissionRead } from "@/api"
+import { PermissionsService } from "@/api"
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
-import type { PermissionRead } from "../../api"
-import { PermissionsService } from "../../api"
 
 export const permissionApiSlice = createApi({
   reducerPath: "permissionApi",

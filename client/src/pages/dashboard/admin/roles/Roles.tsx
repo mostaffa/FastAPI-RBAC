@@ -1,30 +1,27 @@
-import React, { useCallback } from "react"
-import Container from "@mui/material/Container"
-import Grid from "@mui/material/Grid"
-import Paper from "@mui/material/Paper"
-import Typography from "@mui/material/Typography"
-import { useAppDispatch, useAppSelector } from "../../../../app/hooks"
-import {
-  useGetRolesQuery,
-  rolesApiSlice,
-} from "../../../../features/user/rolesApiSlice"
-import { selectPermissions } from "../../../../features/user/userSlice"
-import useSocket from "../../../../hooks/useSocket/useSocket"
-import { useDialogs } from "../../../../hooks/useDialogs/useDialogs"
-import ButtonGroup from "@mui/material/ButtonGroup"
-import Button from "@mui/material/Button"
-import { useForm, Controller } from "react-hook-form"
-import type { RoleRead } from "../../../../api"
-import FormControl from "@mui/material/FormControl"
-import TextField from "@mui/material/TextField"
-import Loader from "../../../../components/ui/loader/Loader"
+import type { RoleRead } from "@/api"
+import { RolesService } from "@/api"
+import { useAppDispatch, useAppSelector } from "@/app/hooks"
+import Loader from "@/components/ui/loader/Loader"
+import { rolesApiSlice, useGetRolesQuery } from "@/features/user/rolesApiSlice"
+import { selectPermissions } from "@/features/user/userSlice"
+import { useDialogs } from "@/hooks/useDialogs/useDialogs"
+import useNotifications from "@/hooks/useNotifications/useNotifications"
+import useSocket from "@/hooks/useSocket/useSocket"
 import DeleteIcon from "@mui/icons-material/Delete"
+import Button from "@mui/material/Button"
+import ButtonGroup from "@mui/material/ButtonGroup"
+import Container from "@mui/material/Container"
+import FormControl from "@mui/material/FormControl"
+import Grid from "@mui/material/Grid"
 import IconButton from "@mui/material/IconButton"
-import useNotifications from "../../../../hooks/useNotifications/useNotifications"
-import { RolesService } from "../../../../api"
+import Paper from "@mui/material/Paper"
+import TextField from "@mui/material/TextField"
+import Typography from "@mui/material/Typography"
+import { lazy, Suspense, useCallback } from "react"
+import { Controller, useForm } from "react-hook-form"
 
-const CreateRole = React.lazy(() => import("./CreateRole"))
-const RolePermission = React.lazy(() => import("./RolePermission"))
+const CreateRole = lazy(() => import("./CreateRole"))
+const RolePermission = lazy(() => import("./RolePermission"))
 
 type ModifyRoles = {
   status: "update" | "delete" | "create"
@@ -226,7 +223,7 @@ const Roles = () => {
 
   const handleCreateNewRole = useCallback(() => {
     const createDialog = dialogs.contentDialog(
-      <React.Suspense fallback={<Loader />}>
+      <Suspense fallback={<Loader />}>
         <CreateRole
           onDone={() => {
             void (async () => {
@@ -238,7 +235,7 @@ const Roles = () => {
           }}
           refreshRoles={status === "disconnected" || status === "error"}
         />
-      </React.Suspense>,
+      </Suspense>,
       {
         title: "Create New Role",
       },
@@ -293,9 +290,9 @@ const Roles = () => {
   const handleViewPermissions = useCallback(
     async (roleId: number) => {
       await dialogs.contentDialog(
-        <React.Suspense fallback={<Loader />}>
+        <Suspense fallback={<Loader />}>
           <RolePermission roleId={roleId} />
-        </React.Suspense>,
+        </Suspense>,
         {
           title: "Role Permissions",
         },

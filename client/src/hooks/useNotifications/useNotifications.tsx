@@ -1,4 +1,4 @@
-import * as React from "react"
+import { useContext } from "react"
 import NotificationsContext from "./NotificationsContext"
 
 export type ShowNotificationOptions = {
@@ -51,7 +51,7 @@ type UseNotifications = {
 }
 
 export default function useNotifications(): UseNotifications {
-  const notificationsContext = React.useContext(NotificationsContext)
+  const notificationsContext = useContext(NotificationsContext)
   if (!notificationsContext) {
     throw new Error("Notifications context was used without a provider.")
   }

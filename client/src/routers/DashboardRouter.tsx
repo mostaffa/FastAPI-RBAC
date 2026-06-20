@@ -1,13 +1,8 @@
-import { lazy, Suspense } from "react"
-import { Routes, Route } from "react-router"
 import { useAuth } from "@/hooks/useAuth/useAuth"
+import { lazy, Suspense } from "react"
+import { Route, Routes } from "react-router"
 
 const Loader = lazy(() => import("@/components/ui/loader/Loader"))
-const Dialogs = lazy(() => import("@/pages/dashboard/notifications/Dialogs"))
-const NotificationAlerts = lazy(
-  () => import("@/pages/dashboard/notifications/NotificationAlerts"),
-)
-
 const Roles = lazy(() => import("@/pages/dashboard/admin/roles/Roles"))
 const Users = lazy(() => import("@/pages/dashboard/admin/users/Users"))
 const UserForm = lazy(() => import("@/pages/dashboard/admin/users/UserForm"))
@@ -18,16 +13,15 @@ const Cpu = lazy(() => import("@/pages/dashboard/monitoring/Cpu"))
 const Disk = lazy(() => import("@/pages/dashboard/monitoring/Disk"))
 const Services = lazy(() => import("@/pages/dashboard/services/Services"))
 const SystemInfo = lazy(() => import("@/pages/dashboard/monitoring/SystemInfo"))
-const LandingPage = lazy(() => import("@/pages/landing/LandingPage"))
 
 export default function DashboardRouter() {
-  // const user = useAppSelector(selectUser)
   const { user, getPermissions } = useAuth()
   const permissions = getPermissions
+
   return (
     <Routes>
       <Route
-        path="/me"
+        path={`/me`}
         element={
           <Suspense fallback={<Loader />}>
             <UserForm updateCurrentUser />
@@ -35,40 +29,16 @@ export default function DashboardRouter() {
         }
       />
       <Route
-        path="/sensors"
+        path={`/sensors`}
         element={
           <Suspense fallback={<Loader />}>
             <Sensors />
           </Suspense>
         }
       />
-      <Route
-        path="/notifications/dialogs"
-        element={
-          <Suspense fallback={<Loader />}>
-            <Dialogs />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/notifications/alerts"
-        element={
-          <Suspense fallback={<Loader />}>
-            <NotificationAlerts />
-          </Suspense>
-        }
-      />
-      <Route
-        path="/*"
-        element={
-          <Suspense fallback={<Loader />}>
-            <LandingPage />
-          </Suspense>
-        }
-      />
       {permissions?.includes("role:read") || user?.user.role?.id === 1 ? (
         <Route
-          path="/admin/roles"
+          path={`/admin/roles`}
           element={
             <Suspense fallback={<Loader />}>
               <Roles />
@@ -78,7 +48,7 @@ export default function DashboardRouter() {
       ) : null}
       {permissions?.includes("user:read") || user?.user.role?.id === 1 ? (
         <Route
-          path="/admin/users"
+          path={`/admin/users`}
           element={
             <Suspense fallback={<Loader />}>
               <Users />
@@ -89,7 +59,7 @@ export default function DashboardRouter() {
       {permissions?.includes("sensors:read") || user?.user.role?.id === 1 ? (
         <>
           <Route
-            path="/manage/system"
+            path={`/manage/system`}
             element={
               <Suspense fallback={<Loader />}>
                 <SystemInfo />
@@ -97,7 +67,7 @@ export default function DashboardRouter() {
             }
           />
           <Route
-            path="/manage/temperature"
+            path={`/manage/temperature`}
             element={
               <Suspense fallback={<Loader />}>
                 <Temperature />
@@ -105,7 +75,7 @@ export default function DashboardRouter() {
             }
           />
           <Route
-            path="/manage/memory"
+            path={`/manage/memory`}
             element={
               <Suspense fallback={<Loader />}>
                 <Memory />
@@ -113,7 +83,7 @@ export default function DashboardRouter() {
             }
           />
           <Route
-            path="/manage/cpu"
+            path={`/manage/cpu`}
             element={
               <Suspense fallback={<Loader />}>
                 <Cpu />
@@ -121,7 +91,7 @@ export default function DashboardRouter() {
             }
           />
           <Route
-            path="/manage/disk"
+            path={`/manage/disk`}
             element={
               <Suspense fallback={<Loader />}>
                 <Disk />
@@ -132,7 +102,7 @@ export default function DashboardRouter() {
       ) : null}
       {permissions?.includes("services:read") || user?.user.role?.id === 1 ? (
         <Route
-          path="/services"
+          path={`/services`}
           element={
             <Suspense fallback={<Loader />}>
               <Services />

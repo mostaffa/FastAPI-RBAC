@@ -1,10 +1,10 @@
-import type { Theme, Components } from "@mui/material/styles"
-import { alpha } from "@mui/material/styles"
+import { formHelperTextClasses } from "@mui/material/FormHelperText"
+import { iconButtonClasses } from "@mui/material/IconButton"
 import { inputBaseClasses } from "@mui/material/InputBase"
 import { inputLabelClasses } from "@mui/material/InputLabel"
 import { outlinedInputClasses } from "@mui/material/OutlinedInput"
-import { formHelperTextClasses } from "@mui/material/FormHelperText"
-import { iconButtonClasses } from "@mui/material/IconButton"
+import type { Components, Theme } from "@mui/material/styles"
+import { alpha } from "@mui/material/styles"
 import { brand } from "../themePrimitives"
 
 export const formInputCustomizations: Components<Theme> = {

@@ -1,10 +1,10 @@
+import { menuItemClasses } from "@mui/material/MenuItem"
 import type { Theme } from "@mui/material/styles"
 import { alpha } from "@mui/material/styles"
+import { pickersDayClasses, yearCalendarClasses } from "@mui/x-date-pickers"
 import type { PickersProComponents } from "@mui/x-date-pickers-pro/themeAugmentation"
 import type { PickerComponents } from "@mui/x-date-pickers/themeAugmentation"
-import { menuItemClasses } from "@mui/material/MenuItem"
-import { pickersDayClasses, yearCalendarClasses } from "@mui/x-date-pickers"
-import { gray, brand } from "../themePrimitives"
+import { brand, gray } from "../themePrimitives"
 
 export const datePickersCustomizations: PickersProComponents<Theme> &
   PickerComponents<Theme> = {

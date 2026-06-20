@@ -1,14 +1,14 @@
-import { useState } from "react"
-import Grid from "@mui/material/Grid"
+import type { RoleCreate } from "@/api"
+import { RolesService } from "@/api"
+import { useAppDispatch } from "@/app/hooks"
+import { rolesApiSlice } from "@/features/user/rolesApiSlice"
+import useNotifications from "@/hooks/useNotifications/useNotifications"
 import Button from "@mui/material/Button"
-import { useForm, Controller } from "react-hook-form"
-import type { RoleCreate } from "../../../../api"
 import FormControl from "@mui/material/FormControl"
+import Grid from "@mui/material/Grid"
 import TextField from "@mui/material/TextField"
-import useNotifications from "../../../../hooks/useNotifications/useNotifications"
-import { RolesService } from "../../../../api"
-import { rolesApiSlice } from "../../../../features/user/rolesApiSlice"
-import { useAppDispatch } from "../../../../app/hooks"
+import { useState } from "react"
+import { Controller, useForm } from "react-hook-form"
 
 type CreateRoleProps = {
   onDone?: () => void

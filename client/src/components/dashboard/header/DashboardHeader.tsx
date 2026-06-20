@@ -1,14 +1,14 @@
-import * as React from "react"
-import { styled, useTheme } from "@mui/material/styles"
-import Box from "@mui/material/Box"
+import MenuIcon from "@mui/icons-material/Menu"
+import MenuOpenIcon from "@mui/icons-material/MenuOpen"
 import MuiAppBar from "@mui/material/AppBar"
+import Box from "@mui/material/Box"
 import IconButton from "@mui/material/IconButton"
+import Stack from "@mui/material/Stack"
+import { styled, useTheme } from "@mui/material/styles"
 import Toolbar from "@mui/material/Toolbar"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import MenuIcon from "@mui/icons-material/Menu"
-import MenuOpenIcon from "@mui/icons-material/MenuOpen"
-import Stack from "@mui/material/Stack"
+import { useCallback } from "react"
 import { Link } from "react-router"
 import ThemeSwitcher from "../../ui/themeSwitcher/ThemeSwitcher"
 
@@ -50,11 +50,11 @@ export default function DashboardHeader({
 }: DashboardHeaderProps) {
   const theme = useTheme()
 
-  const handleMenuOpen = React.useCallback(() => {
+  const handleMenuOpen = useCallback(() => {
     onToggleMenu(!menuOpen)
   }, [menuOpen, onToggleMenu])
 
-  const getMenuIcon = React.useCallback(
+  const getMenuIcon = useCallback(
     (isExpanded: boolean) => {
       const expandMenuActionText = "Expand"
       const collapseMenuActionText = "Collapse"

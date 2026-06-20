@@ -50,26 +50,6 @@ export const makeStore = (preloadedState?: Partial<RootState>) => {
   return store
 }
 
-// export const store = configureStore({
-//   reducer: {
-//     user: userSlice,
-//     // Add other slices here
-
-//   },
-
-//   // Optimize middleware for better performance
-//   middleware: getDefaultMiddleware =>
-//     getDefaultMiddleware({
-//       // Disable serializable check for better performance in dev
-//       serializableCheck: false,
-//       // Enable thunk middleware only when needed
-//       thunk: true,
-//     }),
-
-//   // Enable Redux DevTools only in development
-//   devTools: false,
-// })
-
 export const store = makeStore()
 
 // Infer the type of `store`

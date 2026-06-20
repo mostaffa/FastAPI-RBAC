@@ -1,12 +1,12 @@
 import react from "@vitejs/plugin-react"
-import * as path from "node:path"
-import { defineConfig } from "vitest/config"
-import { visualizer } from "rollup-plugin-visualizer"
-import packageJson from "./package.json" with { type: "json" }
-import { compression, defineAlgorithm } from "vite-plugin-compression2"
-import nodeZlib from "node:zlib"
 import browserslist from "browserslist"
 import { browserslistToTargets } from "lightningcss"
+import * as path from "node:path"
+import nodeZlib from "node:zlib"
+import { visualizer } from "rollup-plugin-visualizer"
+import { compression, defineAlgorithm } from "vite-plugin-compression2"
+import { defineConfig } from "vitest/config"
+import packageJson from "./package.json" with { type: "json" }
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -49,12 +49,12 @@ export default defineConfig(({ mode }) => {
       allowedHosts: ["nest.mostafaothman.com", "ubuntu26"],
       proxy: {
         "/api": {
-          target: "http://localhost:4001",
+          target: "http://localhost:4000",
           changeOrigin: true,
           secure: true,
         },
         "/ws": {
-          target: "http://localhost:4001",
+          target: "http://localhost:4000",
           changeOrigin: true,
           secure: true,
           ws: true,

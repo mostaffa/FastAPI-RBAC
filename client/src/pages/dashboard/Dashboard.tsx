@@ -1,10 +1,8 @@
-import { lazy, Suspense, useState, useCallback, useRef } from "react"
-import { useTheme } from "@mui/material/styles"
-import useMediaQuery from "@mui/material/useMediaQuery"
 import Box from "@mui/material/Box"
+import { useTheme } from "@mui/material/styles"
 import Toolbar from "@mui/material/Toolbar"
-// import DashboardHeader from "@/components/dashboard/header/DashboardHeader"
-// import DashboardSidebar from "@/components/dashboard/sidebar/DashboardSidebar"
+import useMediaQuery from "@mui/material/useMediaQuery"
+import { lazy, Suspense, useCallback, useRef, useState } from "react"
 
 const Loader = lazy(() => import("@/components/ui/loader/Loader"))
 const DashboardHeader = lazy(

@@ -1,10 +1,10 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
 import {
   ServicesService,
   type ServiceStateUpdateRequest,
   type ServiceStateUpdateResponse,
   type ServicesSnapshot,
 } from "@/api"
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
 
 type ServicesSnapshotArgs = {
   includeDetails?: boolean

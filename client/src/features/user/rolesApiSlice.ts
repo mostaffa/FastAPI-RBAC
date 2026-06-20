@@ -1,11 +1,11 @@
+import type { PermissionRead, RoleRead } from "@/api"
+import { RolesService } from "@/api/services/RolesService"
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
-import type { RoleRead, PermissionRead } from "../../api"
-import { RolesService } from "../../api/services/RolesService"
 
 export const rolesApiSlice = createApi({
   reducerPath: "rolesApi",
   baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
-  tagTypes: ["Roles"],
+  tagTypes: ["getRoles", "Permissions"],
   endpoints: builder => ({
     getRoles: builder.query<RoleRead[], undefined>({
       async queryFn() {
@@ -22,6 +22,8 @@ export const rolesApiSlice = createApi({
           }
         }
       },
+      providesTags: ["getRoles"],
+      // invalidatesTags: ["Roles"],
     }),
     getRolePermissions: builder.query<PermissionRead[], number>({
       async queryFn(roleId: number) {
@@ -48,7 +50,7 @@ export const rolesApiSlice = createApi({
         method: "POST",
         body: newRole,
       }),
-      invalidatesTags: ["Roles"],
+      invalidatesTags: ["getRoles"],
     }),
     updateRole: builder.mutation<RoleRead, { updatedRole: Partial<RoleRead> }>({
       query: ({ updatedRole }) => ({
@@ -56,14 +58,14 @@ export const rolesApiSlice = createApi({
         method: "PUT",
         body: updatedRole,
       }),
-      invalidatesTags: ["Roles"],
+      invalidatesTags: ["getRoles"],
     }),
     deleteRole: builder.mutation<{ success: boolean }, number>({
       query: id => ({
         url: `roles/${String(id)}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Roles"],
+      invalidatesTags: ["getRoles"],
     }),
   }),
 })

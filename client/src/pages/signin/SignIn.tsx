@@ -1,22 +1,23 @@
-import * as React from "react"
-import Box from "@mui/material/Box"
-import Button from "@mui/material/Button"
-import Checkbox from "@mui/material/Checkbox"
-import CssBaseline from "@mui/material/CssBaseline"
-import FormControlLabel from "@mui/material/FormControlLabel"
-import Divider from "@mui/material/Divider"
-import Link from "@mui/material/Link"
-import { Link as reactLink } from "react-router"
-import TextField from "@mui/material/TextField"
-import Typography from "@mui/material/Typography"
-import Stack from "@mui/material/Stack"
-import MuiCard from "@mui/material/Card"
-import { styled } from "@mui/material/styles"
+import { FacebookIcon, GoogleIcon } from "@/components/signin/CustomIcons"
+import { useAuth } from "@/hooks/useAuth/useAuth"
 import AppTheme from "@/theme/AppTheme"
 import ColorModeSelect from "@/theme/ColorModeSelect"
-import { GoogleIcon, FacebookIcon } from "@/components/signin/CustomIcons"
-import { useForm, Controller } from "react-hook-form"
-import { useAuth } from "@/hooks/useAuth/useAuth"
+import Box from "@mui/material/Box"
+import Button from "@mui/material/Button"
+import MuiCard from "@mui/material/Card"
+import Checkbox from "@mui/material/Checkbox"
+import CssBaseline from "@mui/material/CssBaseline"
+import Divider from "@mui/material/Divider"
+import FormControlLabel from "@mui/material/FormControlLabel"
+import Link from "@mui/material/Link"
+import Stack from "@mui/material/Stack"
+import { styled } from "@mui/material/styles"
+import TextField from "@mui/material/TextField"
+import Typography from "@mui/material/Typography"
+import * as React from "react"
+import { useEffect } from "react"
+import { Controller, useForm } from "react-hook-form"
+import { Link as reactLink, useNavigate } from "react-router"
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -57,8 +58,8 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }))
 
 export default function SignIn(props: { disableCustomTheme?: boolean }) {
-  const { login } = useAuth()
-
+  const { login, user } = useAuth()
+  const navigate = useNavigate()
   const { getValues, control } = useForm({
     defaultValues: {
       username: "",
@@ -75,6 +76,14 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
       console.error("Login error:", error)
     }
   }, [getValues, login])
+
+  useEffect(() => {
+    if (user) {
+      void (async () => {
+        await navigate("/dashboard")
+      })()
+    }
+  }, [user, navigate])
 
   return (
     <AppTheme {...props}>

@@ -1,9 +1,9 @@
-import { useState } from "react"
+import Box from "@mui/material/Box"
+import Chip from "@mui/material/Chip"
+import Stack from "@mui/material/Stack"
 import { useTheme } from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
-import Box from "@mui/material/Box"
-import Stack from "@mui/material/Stack"
-import Chip from "@mui/material/Chip"
+import { useState } from "react"
 import { usageColor } from "./usageColor"
 
 export type CpuDataPoint = {

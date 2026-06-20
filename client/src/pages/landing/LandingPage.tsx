@@ -1,27 +1,23 @@
-import type React from "react"
-import {
-  Container,
-  Box,
-  Typography,
-  Button,
-  Grid,
-  Card,
-  CardContent,
-  AppBar,
-  Toolbar,
-  useTheme,
-  useMediaQuery,
-} from "@mui/material"
-import {
-  Dashboard as DashboardIcon,
-  Security as SecurityIcon,
-  TrendingUp as TrendingUpIcon,
-  Settings as SettingsIcon,
-  ArrowForward as ArrowForwardIcon,
-} from "@mui/icons-material"
+import Container from "@mui/material/Container"
+import Box from "@mui/material/Box"
+import Typography from "@mui/material/Typography"
+import Button from "@mui/material/Button"
+import Grid from "@mui/material/Grid"
+import Card from "@mui/material/Card"
+import CardContent from "@mui/material/CardContent"
+import AppBar from "@mui/material/AppBar"
+import Toolbar from "@mui/material/Toolbar"
+import { useTheme } from "@mui/material"
+import { useMediaQuery } from "@mui/material"
+import DashboardIcon from "@mui/icons-material/Dashboard"
+import SecurityIcon from "@mui/icons-material/Security"
+import TrendingUpIcon from "@mui/icons-material/TrendingUp"
+import SettingsIcon from "@mui/icons-material/Settings"
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
 import { useNavigate } from "react-router"
+import { BASE_URL, DASHBOARD_URL } from "@/utils/constants"
 
-const LandingPage: React.FC = () => {
+const LandingPage = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const navigate = useNavigate()
@@ -53,12 +49,6 @@ const LandingPage: React.FC = () => {
     },
   ]
 
-  const handleGetStarted = () => {
-    void (async () => {
-      await navigate("/signin")
-    })()
-  }
-
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Navigation */}
@@ -76,7 +66,7 @@ const LandingPage: React.FC = () => {
                   color="inherit"
                   onClick={
                     void (async () => {
-                      await navigate("/signin")
+                      await navigate(`${BASE_URL}${DASHBOARD_URL}`)
                     })()
                   }
                   sx={{ mr: 2 }}
@@ -85,7 +75,11 @@ const LandingPage: React.FC = () => {
                 </Button>
                 <Button
                   variant="contained"
-                  onClick={handleGetStarted}
+                  onClick={() => {
+                    void (async () => {
+                      await navigate(`${BASE_URL}${DASHBOARD_URL}`)
+                    })()
+                  }}
                   endIcon={<ArrowForwardIcon />}
                 >
                   Get Started
@@ -125,7 +119,11 @@ const LandingPage: React.FC = () => {
                 <Button
                   variant="contained"
                   size="large"
-                  onClick={handleGetStarted}
+                  onClick={() => {
+                    void (async () => {
+                      await navigate(`${BASE_URL}${DASHBOARD_URL}`)
+                    })()
+                  }}
                   endIcon={<ArrowForwardIcon />}
                   sx={{ bgcolor: "white", color: "primary.main", px: 4 }}
                 >
@@ -223,7 +221,11 @@ const LandingPage: React.FC = () => {
           <Button
             variant="contained"
             size="large"
-            onClick={handleGetStarted}
+            onClick={() => {
+              void (async () => {
+                await navigate(`${BASE_URL}${DASHBOARD_URL}`)
+              })()
+            }}
             sx={{ bgcolor: "white", color: "primary.main", px: 6 }}
           >
             Get Started for Free

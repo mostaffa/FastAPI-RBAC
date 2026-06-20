@@ -1,7 +1,7 @@
-import * as React from "react"
-import type { OpenDialog, CloseDialog } from "./useDialogs"
+import { createContext } from "react"
+import type { CloseDialog, OpenDialog } from "./useDialogs"
 
-const DialogsContext = React.createContext<{
+const DialogsContext = createContext<{
   open: OpenDialog
   close: CloseDialog
 } | null>(null)

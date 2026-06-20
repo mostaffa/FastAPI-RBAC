@@ -1,6 +1,5 @@
-import * as React from "react"
-import type { SxProps } from "@mui/material/styles"
-import { type Theme } from "@mui/material/styles"
+import DashboardSidebarContext from "@/context/DashboardSidebarContext"
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import Avatar from "@mui/material/Avatar"
 import Box from "@mui/material/Box"
 import Collapse from "@mui/material/Collapse"
@@ -11,24 +10,31 @@ import ListItemIcon from "@mui/material/ListItemIcon"
 import ListItemText from "@mui/material/ListItemText"
 import Paper from "@mui/material/Paper"
 import Typography from "@mui/material/Typography"
+import type { SxProps } from "@mui/material/styles"
+import { type Theme } from "@mui/material/styles"
 import type {} from "@mui/material/themeCssVarsAugmentation"
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
+import {
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react"
 import { Link } from "react-router"
-import DashboardSidebarContext from "../../../../context/DashboardSidebarContext"
 import { MINI_DRAWER_WIDTH } from "../../constants"
 
 export type DashboardSidebarPageItemProps = {
-  id: string
-  title: string
-  icon?: React.ReactNode
-  href?: string
-  action?: React.ReactNode
-  defaultExpanded?: boolean
-  expanded?: boolean
-  selected?: boolean
-  disabled?: boolean
-  nestedNavigation?: React.ReactNode
-  onClick?: () => void
+  readonly id: string
+  readonly title: string
+  readonly icon?: ReactNode
+  readonly href?: string
+  readonly action?: ReactNode
+  readonly defaultExpanded?: boolean
+  readonly expanded?: boolean
+  readonly selected?: boolean
+  readonly disabled?: boolean
+  readonly nestedNavigation?: ReactNode
+  readonly onClick?: () => void
 }
 
 export default function DashboardSidebarPageItem({
@@ -44,16 +50,16 @@ export default function DashboardSidebarPageItem({
   nestedNavigation,
   onClick,
 }: DashboardSidebarPageItemProps) {
-  const sidebarContext = React.useContext(DashboardSidebarContext)
+  const sidebarContext = useContext(DashboardSidebarContext)
   if (!sidebarContext) {
     throw new Error("Sidebar context was used without a provider.")
   }
   const { onPageItemClick, mini, fullyExpanded, fullyCollapsed } =
     sidebarContext
 
-  const [isHovered, setIsHovered] = React.useState(false)
+  const [isHovered, setIsHovered] = useState(false)
 
-  const handleClick = React.useCallback(() => {
+  const handleClick = useCallback(() => {
     onPageItemClick(id, !!nestedNavigation)
     if (onClick) {
       onClick()
@@ -88,7 +94,7 @@ export default function DashboardSidebarPageItem({
 
   const LinkComponent = hasExternalHref ? "a" : Link
 
-  const miniNestedNavigationSidebarContextValue = React.useMemo(() => {
+  const miniNestedNavigationSidebarContextValue = useMemo(() => {
     return {
       onPageItemClick,
       mini: false,
@@ -99,7 +105,7 @@ export default function DashboardSidebarPageItem({
   }, [onPageItemClick])
 
   return (
-    <React.Fragment>
+    <>
       <ListItem
         disablePadding
         {...(nestedNavigation && mini
@@ -248,6 +254,6 @@ export default function DashboardSidebarPageItem({
           {nestedNavigation}
         </Collapse>
       ) : null}
-    </React.Fragment>
+    </>
   )
 }

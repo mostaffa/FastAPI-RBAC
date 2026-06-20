@@ -1,9 +1,9 @@
-import { useState } from "react"
 import Box from "@mui/material/Box"
+import Chip from "@mui/material/Chip"
+import Stack from "@mui/material/Stack"
 import Typography from "@mui/material/Typography"
 import { useTheme } from "@mui/material/styles"
-import Stack from "@mui/material/Stack"
-import Chip from "@mui/material/Chip"
+import { useState } from "react"
 
 export type TemperatureDataPoint = {
   time: string

@@ -116,7 +116,7 @@ async def delete_role(role_id: int, db: Session = Depends(get_session)):
     db.commit()
     await emit(
         "msg",
-        {"type": "role_deleted", "payload": {"role": RoleRead.model_validate(role).model_dump()}},
+        {"type": "role_deleted", "payload": {"role_id": role_id}},
         room=build_role_rooms(db),
     )
     return {"detail": "Role deleted"}

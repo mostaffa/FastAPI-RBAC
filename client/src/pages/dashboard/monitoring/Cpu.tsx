@@ -1,3 +1,11 @@
+import useSocket from "@/hooks/useSocket/useSocket"
+import type { CpuRealtimeResponse, CpuStats } from "@/utils/types"
+import { Box, LinearProgress } from "@mui/material"
+import Container from "@mui/material/Container"
+import Grid from "@mui/material/Grid"
+import Paper from "@mui/material/Paper"
+import { useTheme } from "@mui/material/styles"
+import Typography from "@mui/material/Typography"
 import {
   lazy,
   Suspense,
@@ -7,14 +15,6 @@ import {
   useRef,
   useState,
 } from "react"
-import Container from "@mui/material/Container"
-import Paper from "@mui/material/Paper"
-import Grid from "@mui/material/Grid"
-import Typography from "@mui/material/Typography"
-import useSocket from "@/hooks/useSocket/useSocket"
-import { useTheme } from "@mui/material/styles"
-import type { CpuRealtimeResponse, CpuStats } from "@/utils/types"
-import { Box, LinearProgress } from "@mui/material"
 import type { CpuDataPoint } from "./CpuChart"
 import { usageColor } from "./usageColor"
 

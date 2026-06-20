@@ -1,7 +1,6 @@
-import * as React from "react"
-import { ThemeProvider, createTheme } from "@mui/material/styles"
 import type { ThemeOptions } from "@mui/material/styles"
-import { alpha } from "@mui/material/styles"
+import { ThemeProvider, alpha, createTheme } from "@mui/material/styles"
+import { useMemo, type ReactNode } from "react"
 import {
   dataGridCustomizations,
   datePickersCustomizations,
@@ -9,10 +8,10 @@ import {
   navigationCustomizations,
   sidebarCustomizations,
 } from "./customizations"
-import { colorSchemes, typography, shadows, shape } from "./themePrimitives"
+import { colorSchemes, shadows, shape, typography } from "./themePrimitives"
 
 type AppThemeProps = {
-  children: React.ReactNode
+  children: ReactNode
   /**
    * This is for the docs site. You can ignore it or remove it.
    */
@@ -22,7 +21,7 @@ type AppThemeProps = {
 
 export default function AppTheme(props: AppThemeProps) {
   const { children, disableCustomTheme, themeComponents } = props
-  const theme = React.useMemo(() => {
+  const theme = useMemo(() => {
     return disableCustomTheme
       ? {}
       : createTheme({
@@ -136,7 +135,7 @@ export default function AppTheme(props: AppThemeProps) {
         })
   }, [disableCustomTheme, themeComponents])
   if (disableCustomTheme) {
-    return <React.Fragment>{children}</React.Fragment>
+    return <>{children}</>
   }
   return (
     <ThemeProvider theme={theme} disableTransitionOnChange>
