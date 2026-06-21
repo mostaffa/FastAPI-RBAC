@@ -1,0 +1,12 @@
+# Tooling config for the backend. We keep dependencies in requirements*.txt
+# (existing project convention) and use pyproject.toml only for tool settings.
+
+[tool.pytest.ini_options]
+# Make the `app` package importable without installing it, and only collect the
+# tests/ directory.
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-ra -q"
+# Let async test functions run without an explicit @pytest.mark.asyncio marker.
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

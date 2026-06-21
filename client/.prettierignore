@@ -1,0 +1,6 @@
+# Build output
+dist
+coverage
+
+# Generated API client (produced by scripts/generate-api.mjs — do not format)
+src/api

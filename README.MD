@@ -528,12 +528,82 @@ backend/
 
 ## 🛠️ Development
 
-### Running Tests
+### 🧪 Testing
+
+Both the backend and the frontend ship with a unit-test setup and one worked
+example each — copy the examples to add more tests.
+
+#### Backend (pytest + httpx)
+
+Tests live in **`backend/tests/`** and run against a throwaway **in-memory
+SQLite** database, so they never touch your real Postgres. The app's
+`get_session` dependency is overridden per-test in
+[`backend/tests/conftest.py`](backend/tests/conftest.py), which exposes three
+fixtures: `engine`, `session`, and an async `client` (an `httpx.AsyncClient`
+talking to the app in-process via ASGI — no network, no running server).
+
+Two example test files show the two patterns you'll reuse:
+
+| File | Pattern |
+|------|---------|
+| [`tests/test_security.py`](backend/tests/test_security.py) | **Pure unit test** — call a function, assert the result (password hashing, JWT). No DB. Use for `core/`, `services/`, schemas. |
+| [`tests/test_users_api.py`](backend/tests/test_users_api.py) | **API test** — seed the DB, mint a JWT, hit an endpoint and assert on the HTTP response. Exercises the full **auth → RBAC → DB** stack. Use for any route. |
+
+Run them from the `backend/` directory:
 
 ```bash
-# Run pytest (if configured)
-pytest tests/
+cd backend
+source venv/bin/activate
+
+# Install test dependencies (pytest, pytest-asyncio, httpx) once
+pip install -r requirements-dev.txt
+
+# Run the whole suite
+pytest
 ```
+
+Configuration lives in [`backend/pyproject.toml`](backend/pyproject.toml)
+(`asyncio_mode = "auto"` lets `async def` tests run without a marker).
+
+> **Note:** the API tests use an async `httpx` client rather than the sync
+> `TestClient` on purpose — `TestClient`'s blocking portal segfaults on Python
+> 3.14. CI runs on Python 3.12 (matching the Dockerfile).
+
+#### Frontend (Vitest + Testing Library)
+
+Vitest is already configured in
+[`client/vite.config.ts`](client/vite.config.ts) (jsdom environment, globals,
+`src/setupTests.ts`). Test files live next to the code they cover as
+`*.test.ts(x)`. The example
+[`src/features/user/userSlice.test.ts`](client/src/features/user/userSlice.test.ts)
+covers the Redux slice's reducers and selectors.
+
+```bash
+cd client
+npm install
+
+npm run test          # vitest --run (one-off, used by CI)
+npx vitest            # watch mode while developing
+```
+
+### Continuous Integration (GitHub Actions)
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to
+`main`/`feature/**` and on pull requests, with the following jobs:
+
+| Job | What it does |
+|-----|--------------|
+| **build backend** | install deps, `compileall`, import smoke test |
+| **test backend** | `pytest` (needs *build backend*) |
+| **build frontend** | `tsc -b && vite build` |
+| **lint frontend** | `npm run lint` (ESLint) |
+| **format:check frontend** | `npm run format:check` (Prettier) |
+| **test frontend** | `npm run test` (Vitest) |
+| **build backend image** | builds `backend/Dockerfile` (build-only, needs *test backend*) |
+| **build frontend image** | builds `client/Dockerfile` (build-only, needs *test frontend*) |
+
+The Docker jobs are **build-only** (no push) and cache layers via
+`type=gha`; they verify the images still build without publishing anything.
 
 ### Database Migrations
 
