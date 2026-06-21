@@ -84,7 +84,6 @@ def seed_default_superuser():
     default_username = os.getenv("DEFAULT_USER", "superuser")
     default_password = os.getenv("DEFAULT_PASSWORD", "superuser1234")
     default_email = os.getenv("ADMIN_EMAIL", "admin@example.com")
-    print(f"\u001b[32mSeeding default superuser: {default_username} / {default_password}\u001b[0m")
     with Session(engine) as db:
         existing_user = db.exec(
             select(User).where(User.username == default_username)

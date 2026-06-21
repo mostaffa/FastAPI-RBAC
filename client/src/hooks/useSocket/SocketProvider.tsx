@@ -59,14 +59,22 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     useState<ServerNotification>()
   const { show } = useNotifications()
 
-  const reconnect = () => {
-    if (socketRef.current && !socketRef.current.connected) {
-      // disconnect first
-      socketRef.current.disconnect()
-      // then reconnect
-      socketRef.current.connect()
-    }
-  }
+  // Force a clean reconnect so the server re-joins us to the rooms that match
+  // our CURRENT role (used when the logged-in user's own role changes).
+  const reconnect = useCallback(() => {
+    const socket = socketRef.current
+    if (!socket) return
+    if (socket.connected) socket.disconnect()
+    socket.connect()
+  }, [])
+
+  // Pull list state from the server. Called on every (re)connect so updates
+  // that were emitted while this client was briefly disconnected are recovered
+  // — without this, a dropped socket silently misses role/user events.
+  const resync = useCallback(() => {
+    dispatch(rolesApiSlice.util.invalidateTags(["getRoles"]))
+    dispatch(usersApiSlice.util.invalidateTags(["Users"]))
+  }, [dispatch])
 
   const handleSocketMessage = useCallback(
     (message: SocketMessage) => {
@@ -79,7 +87,12 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                 typeof message.payload === "object" &&
                 "id" in message.payload
               ) {
-                draft.push(message.payload)
+                const newRole = message.payload
+                // Guard against duplicates: the actor also receives this event
+                // while its own mutation refetch may already have added the row.
+                if (!draft.some(role => role.id === newRole.id)) {
+                  draft.push(newRole)
+                }
               }
             }),
           )
@@ -116,7 +129,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
               }
             }),
           )
-          reconnect()
+          // NOTE: a role rename does not change room membership, so we must NOT
+          // reconnect here — doing so churns every watcher's socket.
           setMessage(null)
           break
         case "role_permission_added": {
@@ -164,7 +178,6 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
             user.user.role?.id ===
             (message.payload as { role: RoleRead }).role.id
           ) {
-            console.log(message)
             removePerm(permissionToRemove.name)
           }
           setMessage(null)
@@ -180,7 +193,10 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
                   typeof message.payload === "object" &&
                   "user" in message.payload
                 ) {
-                  draft.push(message.payload.user)
+                  const newUser = message.payload.user
+                  if (!draft.some(u => u.id === newUser.id)) {
+                    draft.push(newUser)
+                  }
                 }
               },
             ),
@@ -215,8 +231,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
             const updatedUser = message.payload as UserOut
             if (updatedUser.user.id === user.user.id) {
               setCurrentUser(updatedUser)
-              // dispatch(setUser(updatedUser))
-              // if the role was changed, the socket must disconnected and reconnected again to the new updated role
+              // if the role changed, reconnect so the server re-joins us to the
+              // new role's room (otherwise we keep getting the OLD role's events).
               if (updatedUser.user.role?.id !== user.user.role?.id) {
                 reconnect()
               }
@@ -253,50 +269,61 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           console.warn("Unhandled message type:", message)
       }
     },
-    [user, dispatch, addPerm, removePerm, setCurrentUser, setMessage],
+    [user, dispatch, addPerm, removePerm, setCurrentUser, reconnect],
   )
 
+  // Keep the latest handler / permissions in refs so the socket can bind its
+  // listeners ONCE per connection instead of re-binding on every render.
+  const handlerRef = useRef(handleSocketMessage)
   useEffect(() => {
-    if (!user) {
+    handlerRef.current = handleSocketMessage
+  }, [handleSocketMessage])
+  const permissionsRef = useRef(permissions)
+  useEffect(() => {
+    permissionsRef.current = permissions
+  }, [permissions])
+
+  const userId = user?.user.id
+
+  useEffect(() => {
+    if (!userId) {
       if (socketRef.current) {
-        if (socketRef.current.connected) {
-          socketRef.current.disconnect()
-        }
+        socketRef.current.disconnect()
+        socketRef.current = null
+        setStatus("disconnected")
       }
-      socketRef.current = null
       return
     }
-    socketRef.current ??= io({
+
+    const socket = io({
       withCredentials: true,
       autoConnect: true,
       path: WS_PATH,
       transports: ["websocket"],
     })
-    const socket = socketRef.current
+    socketRef.current = socket
+
     socket.on("connect", () => {
       setStatus("connected")
+      // Recover anything missed while we were (re)connecting.
+      resync()
+      if (permissionsRef.current.includes("sensors:read")) {
+        socket.emit("sensor_list", { list: "all" })
+      }
     })
     socket.on("disconnect", () => {
       setStatus("disconnected")
-      // console.log(`\u001b[31mSocket disconnected\u001b[0m`)
     })
     socket.on("reconnect_attempt", () => {
       setStatus("reconnecting")
-      // console.log(`\u001b[33mSocket reconnect_attempt\u001b[0m`);
     })
     socket.on("msg", (msg: SocketMessage) => {
       setMessage(msg)
-      handleSocketMessage(msg)
-      console.log(`\u001b[36mMessage received: ${JSON.stringify(msg)}\u001b[0m`)
+      handlerRef.current(msg)
     })
-
     socket.on("notification", (noti: ServerNotification) => {
       setServerNotification(noti)
     })
-
-    if (permissions.includes("sensors:read")) {
-      socket.emit("sensor_list", { list: "all" })
-    }
 
     return () => {
       socket.off("connect")
@@ -305,12 +332,13 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       socket.off("reconnect_attempt")
       socket.off("msg")
       socket.off("notification")
+      socket.disconnect()
+      socketRef.current = null
     }
-  }, [user, WS_PATH, permissions, handleSocketMessage])
+  }, [userId, WS_PATH, resync])
 
   useEffect(() => {
     if (serverNotification) {
-      // console.log(serverNotification)
       show(serverNotification.message, {
         severity: serverNotification.type,
         autoHideDuration: serverNotification.type === "error" ? 10000 : 3000,
@@ -326,7 +354,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       setMessage,
       reconnect,
     }),
-    [status, message],
+    [status, message, reconnect],
   )
 
   return (

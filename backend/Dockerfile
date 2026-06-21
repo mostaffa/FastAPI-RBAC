@@ -18,4 +18,5 @@ COPY . .
 EXPOSE 4000
 
 # Bootstrap (wait for DB, migrate, seed, reset-on-version-change) then serve.
-CMD ["sh", "-c", "python -m app.core.bootstrap && uvicorn app.main:app --host 0.0.0.0 --port 4000 --reload"]
+# Single worker, no --reload: in-memory Socket.IO room/monitor state is per-process.
+CMD ["sh", "-c", "python -m app.core.bootstrap && uvicorn app.main:app --host 0.0.0.0 --port 4000"]

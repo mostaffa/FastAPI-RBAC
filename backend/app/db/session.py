@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import threading
 from typing import Generator
 
 from sqlalchemy.pool import QueuePool
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, create_engine
 
 from app.core.config import (
     DATABASE_URL,
@@ -30,8 +29,10 @@ engine = create_engine(
     pool_recycle=DB_POOL_RECYCLE,
 )
 
+
 # ---------------------------------------------------------------------------
-# Synchronous session generator (for FastAPI Depends and manual next() use)
+# Session generator — used by FastAPI ``Depends`` and, via next()/close(),
+# by the WebSocket permission checks.
 # ---------------------------------------------------------------------------
 
 def get_session() -> Generator[Session, None, None]:
@@ -47,45 +48,9 @@ def get_session() -> Generator[Session, None, None]:
 
 
 # ---------------------------------------------------------------------------
-# Lifecycle helpers for startup/shutdown
+# Lifecycle — dispose the connection pool on shutdown.
 # ---------------------------------------------------------------------------
-
-def init_db() -> None:
-    """Initialize database — run migrations, create tables if needed."""
-    # This is called on FastAPI startup
-    pass
-
 
 def shutdown_db() -> None:
-    """Shutdown database — dispose connection pool."""
+    """Dispose the connection pool on application shutdown."""
     engine.dispose()
-
-
-# ---------------------------------------------------------------------------
-# Convenience: create all tables (for development/testing only)
-# ---------------------------------------------------------------------------
-
-def create_tables() -> None:
-    """Create all tables defined in models. Development use only."""
-    SQLModel.metadata.create_all(engine)
-
-
-# ---------------------------------------------------------------------------
-# Thread-local session for background tasks
-# ---------------------------------------------------------------------------
-
-_local = threading.local()
-
-
-def get_thread_session() -> Session:
-    """Get a thread-local session for use in background tasks."""
-    if not hasattr(_local, "session"):
-        _local.session = Session(engine)
-    return _local.session
-
-
-def close_thread_session() -> None:
-    """Close thread-local session if it exists."""
-    if hasattr(_local, "session"):
-        _local.session.close()
-

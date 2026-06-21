@@ -1,5 +1,6 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
+/* tslint:disable */
 /* eslint-disable */
 import type { Body_login_api_v1_auth_login_post } from '../models/Body_login_api_v1_auth_login_post';
 import type { TokenWithUser } from '../models/TokenWithUser';

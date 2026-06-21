@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
+from app.core.permissions import check_permission_sync
 from app.services.services import services_monitor
 from app.websockets import state
 from app.websockets.socket_server import emit, sio_ref
@@ -45,41 +46,6 @@ async def cleanup_services_subscriptions(sid: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Permission check (runs in executor to avoid blocking event loop)
-# ---------------------------------------------------------------------------
-
-def _check_services_permission_sync(user_id: int, permission_name: str) -> bool:
-    """Synchronous permission check for services."""
-    from contextlib import contextmanager
-    from sqlmodel import select
-
-    @contextmanager
-    def db_session_scope():
-        from app.db.session import get_session
-        db_gen = get_session()
-        db = next(db_gen)
-        try:
-            yield db
-        finally:
-            db_gen.close()
-
-    from app.models.permission import Permission, RolePermission
-    from app.models.user import User
-
-    with db_session_scope() as db:
-        user = db.exec(select(User).where(User.id == user_id)).first()
-        if not user:
-            return False
-        perm = db.exec(
-            select(Permission)
-            .join(RolePermission)
-            .where(RolePermission.role_id == user.role_id)
-            .where(Permission.name == permission_name)
-        ).first()
-        return perm is not None
-
-
-# ---------------------------------------------------------------------------
 # Services handlers — list, realtime start/stop, state update
 # ---------------------------------------------------------------------------
 
@@ -96,7 +62,7 @@ def register_services_handlers(socket_event: Any) -> None:
 
         loop = asyncio.get_event_loop()
         has_perm = await loop.run_in_executor(
-            None, _check_services_permission_sync, user_id, "services:read"
+            None, check_permission_sync, user_id, "services:read"
         )
         if not has_perm:
             await emit(
@@ -119,7 +85,7 @@ def register_services_handlers(socket_event: Any) -> None:
 
         loop = asyncio.get_event_loop()
         has_perm = await loop.run_in_executor(
-            None, _check_services_permission_sync, user_id, "services:read"
+            None, check_permission_sync, user_id, "services:read"
         )
         if not has_perm:
             await emit(
@@ -174,7 +140,7 @@ def register_services_handlers(socket_event: Any) -> None:
 
         loop = asyncio.get_event_loop()
         has_perm = await loop.run_in_executor(
-            None, _check_services_permission_sync, user_id, "services:update"
+            None, check_permission_sync, user_id, "services:update"
         )
         if not has_perm:
             await emit(

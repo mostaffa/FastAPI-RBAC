@@ -59,8 +59,8 @@ DATABASE_URL: str = _get(
 )
 
 # Connection pool settings
-DB_POOL_SIZE: int = int(_get("DB_POOL_SIZE", "10"))
-DB_MAX_OVERFLOW: int = int(_get("DB_MAX_OVERFLOW", "20"))
+DB_POOL_SIZE: int = int(_get("DB_POOL_SIZE", "5"))
+DB_MAX_OVERFLOW: int = int(_get("DB_MAX_OVERFLOW", "5"))
 DB_POOL_TIMEOUT: int = int(_get("DB_POOL_TIMEOUT", "30"))
 DB_POOL_RECYCLE: int = int(_get("DB_POOL_RECYCLE", "1800"))  # 30 min
 DB_ECHO: bool = _get("DB_ECHO", "false").lower() == "true"

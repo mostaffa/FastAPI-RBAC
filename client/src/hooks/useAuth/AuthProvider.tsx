@@ -12,7 +12,7 @@ import {
   selectPermissions,
   setUser,
 } from "@/features/user/userSlice"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { AuthContext } from "./AuthContext"
 
 // NOTE: This provider should wrap the app at a high level (e.g. in main.tsx)
@@ -45,25 +45,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * @param username - The username for login
    * @param password - The password for login
    */
-  const login = async (username: string, password: string) => {
-    try {
-      // Call the API to login
-      const loggedInUser = await AuthService.loginApiV1AuthLoginPost({
-        formData: { username, password },
-      })
-      // Dispatch user update to Redux store
-      dispatch(setUser(loggedInUser.user))
-    } catch (error) {
-      console.error("Login failed:", error)
-      throw error
-    }
-  }
+  const login = useCallback(
+    async (username: string, password: string) => {
+      try {
+        // Call the API to login
+        const loggedInUser = await AuthService.loginApiV1AuthLoginPost({
+          formData: { username, password },
+        })
+        // Dispatch user update to Redux store
+        dispatch(setUser(loggedInUser.user))
+      } catch (error) {
+        console.error("Login failed:", error)
+        throw error
+      }
+    },
+    [dispatch],
+  )
 
   /**
    * Logout function handles user logout.
    * Clears the user state from Redux store and calls API.
    */
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       // Call API to logout
       await AuthService.logoutApiV1AuthLogoutPost()
@@ -73,25 +76,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error("Logout failed:", error)
       throw error
     }
-  }
+  }, [dispatch])
 
   /**
    * AddPermission function adds a permission to the current user.
    * @param permission - The permission to add
    */
-  const addPerm = (permission: string) => {
-    // Dispatch permission update to Redux store
-    dispatch(addPermission(permission))
-  }
+  const addPerm = useCallback(
+    (permission: string) => {
+      // Dispatch permission update to Redux store
+      dispatch(addPermission(permission))
+    },
+    [dispatch],
+  )
 
   /**
    * RemovePermission function removes a permission from the current user.
    * @param permission - The permission to remove
    */
-  const removePerm = (permission: string) => {
-    // Dispatch permission update to Redux store
-    dispatch(removePermission(permission))
-  }
+  const removePerm = useCallback(
+    (permission: string) => {
+      // Dispatch permission update to Redux store
+      dispatch(removePermission(permission))
+    },
+    [dispatch],
+  )
 
   // Get current permissions from Redux store
   const getPermissions = useAppSelector(selectPermissions)
@@ -100,9 +109,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * setCurrentUser function updates the current user in Redux store.
    * @param user - The new user object or null
    */
-  const setCurrentUser = (user: UserOut | null) => {
-    dispatch(setUser(user))
-  }
+  const setCurrentUser = useCallback(
+    (user: UserOut | null) => {
+      dispatch(setUser(user))
+    },
+    [dispatch],
+  )
 
   // Effect to initialize user state when component mounts
   useEffect(() => {
@@ -130,6 +142,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [dispatch, setIsInitializing])
 
+  // Memoize the context value so consumers (e.g. the socket provider) don't
+  // re-run their effects on every AuthProvider render.
+  const contextValue = useMemo(
+    () => ({
+      user, // Current user state
+      login, // Login function
+      logout, // Logout function
+      addPerm, // Add permission function
+      removePerm, // Remove permission function
+      getPermissions, // Current permissions
+      setCurrentUser, // Set current user function
+    }),
+    [user, login, logout, addPerm, removePerm, getPermissions, setCurrentUser],
+  )
+
   // Show loading state while initializing
   if (isInitializing) {
     return <div>Loading...</div>
@@ -137,17 +164,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Return the AuthContext.Provider with authentication functions
   return (
-    <AuthContext.Provider
-      value={{
-        user, // Current user state
-        login, // Login function
-        logout, // Logout function
-        addPerm, // Add permission function
-        removePerm, // Remove permission function
-        getPermissions, // Current permissions
-        setCurrentUser, // Set current user function
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   )

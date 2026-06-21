@@ -2,13 +2,26 @@
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.api import api_router
 from app.core.config import CORS_ORIGINS
-from app.db.session import init_db, shutdown_db
+from app.db.session import shutdown_db
 from app.websockets.connection_manager import socket_app
+
+
+# ---------------------------------------------------------------------------
+# Lifespan — dispose the DB connection pool on shutdown.
+# ---------------------------------------------------------------------------
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    shutdown_db()
+
 
 # ---------------------------------------------------------------------------
 # Application factory
@@ -21,6 +34,7 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
+    lifespan=lifespan,
 )
 
 # ---------------------------------------------------------------------------
@@ -47,19 +61,3 @@ app.add_middleware(
 
 app.include_router(api_router, prefix="/api/v1")
 app.mount("/ws", socket_app)
-
-
-# ---------------------------------------------------------------------------
-# Lifecycle hooks — database initialization and cleanup
-# ---------------------------------------------------------------------------
-
-@app.on_event("startup")
-async def startup() -> None:
-    """Initialize database connection pool on startup."""
-    init_db()
-
-
-@app.on_event("shutdown")
-async def shutdown() -> None:
-    """Dispose database connection pool on shutdown."""
-    shutdown_db()

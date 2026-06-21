@@ -1,6 +1,7 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
- 
+/* tslint:disable */
+/* eslint-disable */
 /**
  * Docstring for UserCreate
  * Schema for creating a new user.

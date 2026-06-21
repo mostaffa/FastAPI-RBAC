@@ -9,11 +9,12 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from passlib.context import CryptContext
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
 from app.core.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
 from app.db.session import get_session
-from app.models.user import User
+from app.models.user import Role, User
 
 
 # ---------------------------------------------------------------------------
@@ -67,7 +68,11 @@ def _get_user_from_token(token: str, db: Session) -> User:
     except JWTError:
         raise credentials_exception
 
-    user = db.exec(select(User).where(User.id == int(user_id))).first()
+    user = db.exec(
+        select(User)
+        .where(User.id == int(user_id))
+        .options(selectinload(User.role).selectinload(Role.permissions))
+    ).first()
     if not user or not user.active:
         raise credentials_exception
 
@@ -106,19 +111,3 @@ def get_current_user_from_token(token: str, db: Session) -> User | None:
         return _get_user_from_token(token, db)
     except HTTPException:
         return None
-
-
-def get_current_user_permissions(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_session),
-) -> list:
-    if not current_user.role:
-        return []
-
-    from app.models.permission import Permission, RolePermission
-
-    return db.exec(
-        select(Permission).join(RolePermission).where(
-            RolePermission.role_id == current_user.role_id
-        )
-    ).all()

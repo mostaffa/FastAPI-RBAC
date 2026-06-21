@@ -7,6 +7,7 @@ type SocketContextType = {
   status: string
   message: SocketMessage | null
   setMessage: React.Dispatch<React.SetStateAction<SocketMessage | null>>
+  reconnect: () => void
 }
 
 const SocketContext = React.createContext<SocketContextType | null>(null)

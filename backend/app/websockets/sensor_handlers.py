@@ -9,39 +9,10 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Callable
 
-from sqlmodel import select
-
-from app.db.session import get_session
-from app.models.permission import Permission, RolePermission
-from app.models.user import User
+from app.core.permissions import check_permission_sync
 from app.services.sensor import sensor_service
 from app.websockets import state
 from app.websockets.socket_server import emit, sio
-
-
-# ---------------------------------------------------------------------------
-# Permission check — runs in executor to avoid blocking event loop
-# ---------------------------------------------------------------------------
-
-def _check_permission_sync(user_id: int, permission_name: str) -> bool:
-    """Synchronous permission check (runs in threadpool)."""
-    db_gen = get_session()
-    try:
-        db = next(db_gen)
-        user = db.exec(select(User).where(User.id == user_id)).first()
-        if not user:
-            return False
-        perm = db.exec(
-            select(Permission)
-            .join(RolePermission)
-            .where(RolePermission.role_id == user.role_id)
-            .where(Permission.name == permission_name)
-        ).first()
-        return perm is not None
-    except Exception:
-        return False
-    finally:
-        db_gen.close()
 
 
 # ---------------------------------------------------------------------------
@@ -146,7 +117,7 @@ class _SensorHandler:
         # Check permission (run in executor to avoid blocking event loop)
         loop = asyncio.get_event_loop()
         has_perm = await loop.run_in_executor(
-            None, _check_permission_sync, user_id, self.permission
+            None, check_permission_sync, user_id, self.permission
         )
         if not has_perm:
             await emit(
