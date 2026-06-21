@@ -2,8 +2,6 @@ import type { ThemeOptions } from "@mui/material/styles"
 import { ThemeProvider, alpha, createTheme } from "@mui/material/styles"
 import { useMemo, type ReactNode } from "react"
 import {
-  dataGridCustomizations,
-  datePickersCustomizations,
   formInputCustomizations,
   navigationCustomizations,
   sidebarCustomizations,
@@ -35,8 +33,6 @@ export default function AppTheme(props: AppThemeProps) {
           shadows,
           shape,
           components: {
-            ...dataGridCustomizations,
-            ...datePickersCustomizations,
             ...formInputCustomizations,
             ...navigationCustomizations,
             ...sidebarCustomizations,

@@ -2,7 +2,11 @@ import type { RoleRead } from "@/api"
 import { RolesService } from "@/api"
 import { useAppDispatch, useAppSelector } from "@/app/hooks"
 import Loader from "@/components/ui/loader/Loader"
-import { rolesApiSlice, useGetRolesQuery } from "@/features/user/rolesApiSlice"
+import {
+  rolesApiSlice,
+  useGetRolesQuery,
+  useUpdateRoleMutation,
+} from "@/features/user/rolesApiSlice"
 import { selectPermissions } from "@/features/user/userSlice"
 import { useDialogs } from "@/hooks/useDialogs/useDialogs"
 import useNotifications from "@/hooks/useNotifications/useNotifications"
@@ -38,7 +42,7 @@ const Roles = () => {
   const dialogs = useDialogs()
   const dispatch = useAppDispatch()
   const notifications = useNotifications()
-  //  RolesService.readRolesApiV1RolesGet(undefined);
+  const [updateRole] = useUpdateRoleMutation()
 
   const { setValue, control, getValues } = useForm<RoleRead>({
     defaultValues: {
@@ -144,12 +148,16 @@ const Roles = () => {
                     // if (selectedRole) {
                     try {
                       const updatedRole =
-                        await RolesService.updateRoleApiV1RolesRoleIdPut({
+                        // await RolesService.updateRoleApiV1RolesRoleIdPut({
+                        //   roleId: getValues("id"),
+                        //   requestBody: {
+                        //     name: getValues("name"),
+                        //   },
+                        // })
+                        await updateRole({
                           roleId: getValues("id"),
-                          requestBody: {
-                            name: getValues("name"),
-                          },
-                        })
+                          roleName: getValues("name"),
+                        }).unwrap()
                       notifications.show("Role updated successfully!", {
                         severity: "success",
                         autoHideDuration: 3000,
@@ -218,6 +226,7 @@ const Roles = () => {
       status,
       refreshRoles,
       getValues,
+      updateRole,
     ],
   )
 
@@ -300,45 +309,6 @@ const Roles = () => {
     },
     [dialogs],
   )
-
-  // useEffect(() => {
-  //   if (message) {
-  //     if (message.type.startsWith("role_")) {
-  //       dispatch(
-  //         rolesApiSlice.util.updateQueryData("getRoles", undefined, draft => {
-  //           switch (message.type) {
-  //             case "role_created": {
-  //               draft.push(message.payload as RoleRead)
-  //               break
-  //             }
-  //             case "role_updated": {
-  //               const updatedRole = message.payload as RoleRead
-  //               const index = draft.findIndex(
-  //                 role => role.id === updatedRole.id,
-  //               )
-  //               if (index !== -1) {
-  //                 draft[index].name = updatedRole.name
-  //               }
-  //               break
-  //             }
-  //             case "role_deleted": {
-  //               const deletedRoleId = (message.payload as { role_id: number })
-  //                 .role_id
-  //               const deleteIndex = draft.findIndex(
-  //                 role => role.id === deletedRoleId,
-  //               )
-  //               if (deleteIndex !== -1) {
-  //                 draft.splice(deleteIndex, 1)
-  //               }
-  //               break
-  //             }
-  //           }
-  //         }),
-  //       )
-  //     }
-  //     setMessage(null)
-  //   }
-  // }, [message, setMessage, dispatch])
 
   return (
     <Container maxWidth="xl">

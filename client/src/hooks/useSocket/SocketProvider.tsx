@@ -59,6 +59,15 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     useState<ServerNotification>()
   const { show } = useNotifications()
 
+  const reconnect = () => {
+    if (socketRef.current && !socketRef.current.connected) {
+      // disconnect first
+      socketRef.current.disconnect()
+      // then reconnect
+      socketRef.current.connect()
+    }
+  }
+
   const handleSocketMessage = useCallback(
     (message: SocketMessage) => {
       if (!user) return
@@ -107,6 +116,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
               }
             }),
           )
+          reconnect()
           setMessage(null)
           break
         case "role_permission_added": {
@@ -277,7 +287,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     socket.on("msg", (msg: SocketMessage) => {
       setMessage(msg)
       handleSocketMessage(msg)
-      // console.log(`\u001b[36mMessage received: ${JSON.stringify(msg)}\u001b[0m`)
+      console.log(`\u001b[36mMessage received: ${JSON.stringify(msg)}\u001b[0m`)
     })
 
     socket.on("notification", (noti: ServerNotification) => {
@@ -297,15 +307,6 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       socket.off("notification")
     }
   }, [user, WS_PATH, permissions, handleSocketMessage])
-
-  const reconnect = () => {
-    if (socketRef.current && !socketRef.current.connected) {
-      // disconnect first
-      socketRef.current.disconnect()
-      // then reconnect
-      socketRef.current.connect()
-    }
-  }
 
   useEffect(() => {
     if (serverNotification) {

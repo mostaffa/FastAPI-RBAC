@@ -1,10 +1,10 @@
 import type { PermissionRead, RoleRead } from "@/api"
 import { RolesService } from "@/api/services/RolesService"
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
+import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react"
 
 export const rolesApiSlice = createApi({
   reducerPath: "rolesApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api/v1" }),
+  baseQuery: fakeBaseQuery(),
   tagTypes: ["getRoles", "Permissions"],
   endpoints: builder => ({
     getRoles: builder.query<RoleRead[], undefined>({
@@ -44,27 +44,65 @@ export const rolesApiSlice = createApi({
         }
       },
     }),
+
     addRole: builder.mutation<RoleRead, Partial<RoleRead>>({
-      query: newRole => ({
-        url: "roles",
-        method: "POST",
-        body: newRole,
-      }),
+      async queryFn(newRole) {
+        try {
+          const data = await RolesService.createRoleApiV1RolesPost({
+            requestBody: newRole as RoleRead,
+          })
+          return { data }
+        } catch (error) {
+          return {
+            error: {
+              status: "CUSTOM_ERROR" as const,
+              data: error,
+              error: String(error),
+            },
+          }
+        }
+      },
       invalidatesTags: ["getRoles"],
     }),
-    updateRole: builder.mutation<RoleRead, { updatedRole: Partial<RoleRead> }>({
-      query: ({ updatedRole }) => ({
-        url: `roles/${String(updatedRole.id)}`,
-        method: "PUT",
-        body: updatedRole,
-      }),
+    updateRole: builder.mutation<
+      RoleRead,
+      { roleId: number; roleName: string }
+    >({
+      async queryFn({ roleId, roleName }) {
+        try {
+          const data = await RolesService.updateRoleApiV1RolesRoleIdPut({
+            roleId,
+            requestBody: { name: roleName },
+          })
+          return { data }
+        } catch (error) {
+          return {
+            error: {
+              status: "CUSTOM_ERROR" as const,
+              data: error,
+              error: String(error),
+            },
+          }
+        }
+      },
+
       invalidatesTags: ["getRoles"],
     }),
     deleteRole: builder.mutation<{ success: boolean }, number>({
-      query: id => ({
-        url: `roles/${String(id)}`,
-        method: "DELETE",
-      }),
+      async queryFn(id) {
+        try {
+          await RolesService.deleteRoleApiV1RolesRoleIdDelete({ roleId: id })
+          return { data: { success: true } }
+        } catch (error) {
+          return {
+            error: {
+              status: "CUSTOM_ERROR" as const,
+              data: error,
+              error: String(error),
+            },
+          }
+        }
+      },
       invalidatesTags: ["getRoles"],
     }),
   }),

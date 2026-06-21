@@ -93,11 +93,13 @@ async def update_role(role_id: int, role_in: RoleCreate, db: Session = Depends(g
     db.add(role)
     db.commit()
     db.refresh(role)
+    rooms = build_role_rooms(db)
     await emit(
         "msg",
         {"type": "role_updated", "payload": RoleRead.model_validate(role).model_dump()},
-        room=build_role_rooms(db),
+        room=rooms,
     )
+    print(f"\u001b[32mEmitted role_updated event to rooms: {rooms} \u001b[0m")
     return role
 
 @router.delete(
@@ -114,10 +116,11 @@ async def delete_role(role_id: int, db: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Role not found")
     db.delete(role)
     db.commit()
+    rooms = build_role_rooms(db) + [f"role_{role_id}"]
     await emit(
         "msg",
         {"type": "role_deleted", "payload": {"role_id": role_id}},
-        room=build_role_rooms(db),
+        room=rooms,
     )
     return {"detail": "Role deleted"}
 
@@ -166,7 +169,7 @@ async def assign_permission_to_role(
     # Refresh to get updated relationships
     db.refresh(role)
     db.refresh(permission)
-
+    rooms = build_role_rooms(db) + [f"role_{role_id}"]
     await emit(
         "msg",
         {
@@ -174,7 +177,7 @@ async def assign_permission_to_role(
             "payload": {"role": RoleRead.model_validate(role).model_dump(), "permission": PermissionRead.model_validate(permission).model_dump()},
             # "payload": {"role": role.dict(), "permission": permission.dict()},
         },
-        room=build_role_rooms(db) + [f"role_{role_id}"],
+        room=rooms,
     )
     return {"detail": "Permission assigned"}
 
@@ -203,6 +206,7 @@ async def remove_permission_from_role(
     db.commit()
     role = db.get(Role, role_id)
     permission = db.get(Permission, permission_id)
+    rooms = build_role_rooms(db) + [f"role_{role_id}"]
     if old_role and role and permission:
         await emit(
             "msg",
@@ -210,6 +214,6 @@ async def remove_permission_from_role(
                 "type": "role_permission_removed",
                 "payload": {"role": RoleRead.model_validate(role).model_dump(), "permission": PermissionRead.model_validate(permission).model_dump()},
             },
-            room=build_role_rooms(db) + [f"role_{old_role.id}"],
+            room=rooms,
         )
     return {"detail": "Permission removed"}
