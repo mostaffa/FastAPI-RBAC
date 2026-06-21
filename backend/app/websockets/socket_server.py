@@ -10,7 +10,11 @@ from typing import Any
 
 import socketio  # type: ignore[import-untyped]
 
-from app.core.config import SOCKETIO_CORS_ORIGINS, SOCKETIO_PATH
+from app.core.config import (
+    SOCKETIO_CORS_ORIGINS,
+    SOCKETIO_MESSAGE_QUEUE,
+    SOCKETIO_PATH,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -26,8 +30,22 @@ _cors_allowed_origins: str | list[str] = (
     else [o.strip() for o in SOCKETIO_CORS_ORIGINS.split(",") if o.strip()]
 )
 
+# Cross-worker fan-out. With multiple worker processes (gunicorn --workers N),
+# each worker owns an independent in-memory room registry; without a shared
+# client_manager an emit only reaches clients pinned to the SAME worker that
+# handled the HTTP request, so notifications land only ~1/N of the time. An
+# AsyncRedisManager makes every worker publish/subscribe emits through Redis, so
+# a role change raised on any worker reaches clients on all of them. Empty
+# SOCKETIO_MESSAGE_QUEUE → default in-process manager (single-worker only).
+_client_manager = (
+    socketio.AsyncRedisManager(SOCKETIO_MESSAGE_QUEUE)
+    if SOCKETIO_MESSAGE_QUEUE
+    else None
+)
+
 sio = socketio.AsyncServer(
     async_mode="asgi",
+    client_manager=_client_manager,
     cors_allowed_origins=_cors_allowed_origins,
     logger=False,
     engineio_logger=False,

@@ -13,6 +13,17 @@ services:
       retries: 10
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: fastapi_rbac_redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   api:
     build:
       context: ./backend
@@ -26,8 +37,13 @@ services:
       # alembic build DATABASE_URL from POSTGRES_*, so the api now connects to
       # the postgres container instead of to itself.
       POSTGRES_HOST: postgres
+      # Likewise point Socket.IO's message queue at the redis service (the .env
+      # value targets localhost for the host systemd deployment).
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "4000:4000"

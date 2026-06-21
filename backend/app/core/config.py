@@ -88,6 +88,16 @@ SEED_VERSION: str = _get("SEED_VERSION", "1")
 SOCKETIO_CORS_ORIGINS: str = _get("SOCKETIO_CORS_ORIGINS", "*")
 SOCKETIO_PATH: str = _get("SOCKETIO_PATH", "/ws")
 
+# Shared message queue for Socket.IO. REQUIRED when running more than one worker
+# (e.g. gunicorn --workers N): each worker keeps its own in-memory room registry,
+# so without a shared backend an emit on one worker never reaches clients held by
+# another — notifications then arrive only ~1/N of the time. Every worker connects
+# to the same Redis and Socket.IO fans emits out over pub/sub. Empty = default
+# in-memory manager (only correct for a SINGLE worker). SOCKETIO_MESSAGE_QUEUE may
+# point at a different broker (e.g. amqp://) and falls back to REDIS_URL.
+REDIS_URL: str = _get("REDIS_URL", "")
+SOCKETIO_MESSAGE_QUEUE: str = _get("SOCKETIO_MESSAGE_QUEUE", REDIS_URL)
+
 # ---------------------------------------------------------------------------
 # Sensors polling interval (seconds)
 # ---------------------------------------------------------------------------

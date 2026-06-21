@@ -17,6 +17,11 @@ COPY . .
 
 EXPOSE 4000
 
-# Bootstrap (wait for DB, migrate, seed, reset-on-version-change) then serve.
-# Single worker, no --reload: in-memory Socket.IO room/monitor state is per-process.
-CMD ["sh", "-c", "python -m app.core.bootstrap && uvicorn app.main:app --host 0.0.0.0 --port 4000"]
+# Bootstrap (wait for DB, migrate, seed, reset-on-version-change) ONCE, then serve
+# under gunicorn with multiple Uvicorn workers — matching the production systemd
+# unit. bootstrap runs in this shell BEFORE gunicorn forks, so migrations/seed run
+# exactly once, not per worker. Socket.IO room state is per-worker, so cross-worker
+# fan-out relies on the shared Redis message queue (REDIS_URL -> AsyncRedisManager);
+# without it, notifications would reach only ~1/N of connected clients. Override the
+# worker count with GUNICORN_WORKERS.
+CMD ["sh", "-c", "python -m app.core.bootstrap && gunicorn app.main:app --workers ${GUNICORN_WORKERS:-3} --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:4000 --access-logfile -"]

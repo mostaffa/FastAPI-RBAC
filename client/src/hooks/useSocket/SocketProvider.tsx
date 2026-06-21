@@ -320,12 +320,20 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     socket.on("msg", (msg: SocketMessage) => {
       setMessage(msg)
       handlerRef.current(msg)
+      console.log("\u001b[34m[Socket]\u001b[0m Received message:", msg)
     })
     socket.on("notification", (noti: ServerNotification) => {
       setServerNotification(noti)
     })
 
     return () => {
+      // Always tear down THIS socket — drop its listeners and disconnect —
+      // regardless of whether it is currently connected. Guarding on
+      // `.connected` leaks the socket whenever cleanup runs mid-(re)connect
+      // (StrictMode's mount/unmount, an auth change, or a server restart while
+      // the socket is briefly down): the old socket keeps its listeners and its
+      // background reconnection loop, so a second socket gets created alongside
+      // it and every "msg" is then handled twice.
       socket.off("connect")
       socket.off("disconnect")
       socket.off("connect_error")
@@ -333,7 +341,10 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       socket.off("msg")
       socket.off("notification")
       socket.disconnect()
-      socketRef.current = null
+      // Only clear the shared ref if a newer effect run hasn't already replaced it.
+      if (socketRef.current === socket) {
+        socketRef.current = null
+      }
     }
   }, [userId, WS_PATH, resync])
 

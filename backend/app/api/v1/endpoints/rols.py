@@ -33,6 +33,7 @@ async def create_role(role_in: RoleCreate, db: Session = Depends(get_session)):
         return RoleRead.model_validate(db_role), build_rooms_for_permission(db, "role:read")
 
     role_read, rooms = await run_in_threadpool(_create)
+    print("\u001b[34m[WebSocket]\u001b[0m Emitting role_created event to rooms:", rooms)
     await emit(
         "msg",
         {"type": "role_created", "payload": role_read.model_dump()},
@@ -85,6 +86,7 @@ async def update_role(role_id: int, role_in: RoleCreate, db: Session = Depends(g
         return RoleRead.model_validate(role), build_rooms_for_permission(db, "role:read")
 
     role_read, rooms = await run_in_threadpool(_update)
+    print("\u001b[32m[WebSocket]\u001b[0m Emitting role_updated event to rooms:", rooms)
     await emit(
         "msg",
         {"type": "role_updated", "payload": role_read.model_dump()},
@@ -117,6 +119,7 @@ async def delete_role(role_id: int, db: Session = Depends(get_session)):
         {"type": "role_deleted", "payload": {"role_id": role_id}},
         room=rooms,
     )
+    print("\u001b[34m[WebSocket]\u001b[0m Emitting role_deleted event to rooms:", rooms)
     return {"detail": "Role deleted"}
 
 
@@ -164,6 +167,7 @@ async def assign_permission_to_role(
         db.add(RolePermission(role_id=role_id, permission_id=permission_id))
         db.commit()
         rooms = build_rooms_for_permission(db, "role:read") + [f"role_{role_id}"]
+        print("\u001b[34m[WebSocket]\u001b[0m Emitting role_permission_added event to rooms:", rooms)
         return (
             RoleRead.model_validate(role),
             PermissionRead.model_validate(permission),
@@ -210,6 +214,7 @@ async def remove_permission_from_role(
         role = db.get(Role, role_id)
         permission = db.get(Permission, permission_id)
         rooms = build_rooms_for_permission(db, "role:read") + [f"role_{role_id}"]
+        print("\u001b[34m[WebSocket]\u001b[0m Emitting role_permission_removed event to rooms:", rooms)
         payload = None
         if role and permission:
             payload = {
