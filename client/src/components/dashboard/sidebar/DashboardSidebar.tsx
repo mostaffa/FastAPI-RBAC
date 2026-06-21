@@ -1,45 +1,42 @@
-import * as React from "react"
-import { useTheme } from "@mui/material/styles"
-import useMediaQuery from "@mui/material/useMediaQuery"
-import { selectSensors } from "../../../features/sensors/sensorsSlice.ts"
+import DashboardSidebarContext from "@/context/DashboardSidebarContext"
+import { useAuth } from "@/hooks/useAuth/useAuth.ts"
+import { BASE_URL, DASHBOARD_URL } from "@/utils/constants.ts"
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings"
+import ComputerIcon from "@mui/icons-material/Computer"
+import DeveloperBoardIcon from "@mui/icons-material/DeveloperBoard"
+import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat"
+import ExitToAppIcon from "@mui/icons-material/ExitToApp"
+import GroupsIcon from "@mui/icons-material/Groups"
+import MemoryIcon from "@mui/icons-material/Memory"
+import MiscellaneousServicesIcon from "@mui/icons-material/MiscellaneousServices"
+import MonitorIcon from "@mui/icons-material/Monitor"
+import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline"
+import PersonIcon from "@mui/icons-material/Person"
+import ReportGmailerrorredIcon from "@mui/icons-material/ReportGmailerrorred"
+import StorageIcon from "@mui/icons-material/Storage"
 import Box from "@mui/material/Box"
 import Drawer from "@mui/material/Drawer"
 import List from "@mui/material/List"
 import Toolbar from "@mui/material/Toolbar"
+import { useTheme } from "@mui/material/styles"
 import type {} from "@mui/material/themeCssVarsAugmentation"
-import ReportGmailerrorredIcon from "@mui/icons-material/ReportGmailerrorred"
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings"
+import useMediaQuery from "@mui/material/useMediaQuery"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { matchPath, useLocation } from "react-router"
-import DashboardSidebarContext from "../../../context/DashboardSidebarContext"
 import { DRAWER_WIDTH, MINI_DRAWER_WIDTH } from "../constants.ts"
-import DashboardSidebarPageItem from "./headerPageItem/DashboardSidebarPageItem.tsx"
-import DashboardSidebarHeaderItem from "./headerItem/DashboardSidebarHeaderItem.tsx"
-import DashboardSidebarDividerItem from "./deviderItem/DashboardSidebarDividerItem"
-import PersonIcon from "@mui/icons-material/Person"
-import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline"
-import GroupsIcon from "@mui/icons-material/Groups"
-import SensorsIcon from "@mui/icons-material/Sensors"
-import SettingsIcon from "@mui/icons-material/Settings"
-import TerminalIcon from '@mui/icons-material/Terminal';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
 import {
   getDrawerSxTransitionMixin,
   getDrawerWidthTransitionMixin,
 } from "../mixins"
-import { useAppSelector, useAppDispatch } from "../../../app/hooks.ts"
-import {
-  selectUser,
-  clearUser,
-  selectPermissions,
-} from "../../../features/user/userSlice.ts"
-import ExitToAppIcon from "@mui/icons-material/ExitToApp"
-import { AuthService } from "../../../api/index.ts"
+import DashboardSidebarDividerItem from "./deviderItem/DashboardSidebarDividerItem"
+import DashboardSidebarHeaderItem from "./headerItem/DashboardSidebarHeaderItem.tsx"
+import DashboardSidebarPageItem from "./headerPageItem/DashboardSidebarPageItem.tsx"
 
 export type DashboardSidebarProps = {
-  expanded?: boolean
-  setExpanded: (expanded: boolean) => void
-  disableCollapsibleSidebar?: boolean
-  container?: Element
+  readonly expanded?: boolean
+  readonly setExpanded: (expanded: boolean) => void
+  readonly disableCollapsibleSidebar?: boolean
+  readonly container?: Element
 }
 
 export default function DashboardSidebar({
@@ -48,28 +45,17 @@ export default function DashboardSidebar({
   disableCollapsibleSidebar = false,
   container,
 }: DashboardSidebarProps) {
-  const user = useAppSelector(selectUser)
-  const selectedPermissions = useAppSelector(selectPermissions)
-  const permissions = React.useMemo(
-    () => selectedPermissions ?? [],
-    [selectedPermissions],
-  )
-  const dispatch = useAppDispatch()
+  const { logout, user, getPermissions } = useAuth()
+  const permissions = useMemo(() => getPermissions ?? [], [getPermissions])
   const theme = useTheme()
-
   const { pathname } = useLocation()
-
-  const [expandedItemIds, setExpandedItemIds] = React.useState<string[]>([])
-
+  const [expandedItemIds, setExpandedItemIds] = useState<string[]>([])
   const isOverSmViewport = useMediaQuery(theme.breakpoints.up("sm"))
   const isOverMdViewport = useMediaQuery(theme.breakpoints.up("md"))
+  const [isFullyExpanded, setIsFullyExpanded] = useState(expanded)
+  const [isFullyCollapsed, setIsFullyCollapsed] = useState(!expanded)
 
-  const [isFullyExpanded, setIsFullyExpanded] = React.useState(expanded)
-  const [isFullyCollapsed, setIsFullyCollapsed] = React.useState(!expanded)
-
-  const sensors = useAppSelector(selectSensors)
-
-  React.useEffect(() => {
+  useEffect(() => {
     if (expanded) {
       const drawerWidthTransitionTimeout = setTimeout(() => {
         setIsFullyExpanded(true)
@@ -79,12 +65,11 @@ export default function DashboardSidebar({
         clearTimeout(drawerWidthTransitionTimeout)
       }
     }
-
     setIsFullyExpanded(false)
     return
   }, [expanded, theme.transitions.duration.enteringScreen])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!expanded) {
       const drawerWidthTransitionTimeout = setTimeout(() => {
         setIsFullyCollapsed(true)
@@ -103,14 +88,14 @@ export default function DashboardSidebar({
 
   const mini = !disableCollapsibleSidebar && !expanded
 
-  const handleSetSidebarExpanded = React.useCallback(
+  const handleSetSidebarExpanded = useCallback(
     (newExpanded: boolean) => () => {
       setExpanded(newExpanded)
     },
     [setExpanded],
   )
 
-  const handlePageItemClick = React.useCallback(
+  const handlePageItemClick = useCallback(
     (itemId: string, hasNestedNavigation: boolean) => {
       if (hasNestedNavigation && !mini) {
         setExpandedItemIds(previousValue =>
@@ -130,9 +115,9 @@ export default function DashboardSidebar({
   const hasDrawerTransitions =
     isOverSmViewport && (!disableCollapsibleSidebar || isOverMdViewport)
 
-  const getDrawerContent = React.useCallback(
+  const getDrawerContent = useCallback(
     (viewport: "phone" | "tablet" | "desktop") => (
-      <React.Fragment>
+      <>
         <Toolbar />
         <Box
           component="nav"
@@ -166,35 +151,42 @@ export default function DashboardSidebar({
               id="me"
               title={
                 user
-                  ? user.first_name
-                    ? user.first_name + " " + (user.last_name ?? "")
-                    : user.username
+                  ? user.user.first_name
+                    ? user.user.first_name + " " + (user.user.last_name ?? "")
+                    : user.user.username
                   : ""
               }
               icon={<PersonIcon />}
-              href="/me"
-              selected={!!matchPath("/me/*", pathname) || pathname === "/"}
+              href={`${BASE_URL}${DASHBOARD_URL}me`}
+              selected={
+                !!matchPath(
+                  { path: `${BASE_URL}${DASHBOARD_URL}me/*` },
+                  pathname,
+                ) || pathname === `${BASE_URL}${DASHBOARD_URL}me`
+              }
             />
             <DashboardSidebarDividerItem />
-            {/* <DashboardSidebarPageItem
-              id="layout"
-              title="Layout"
-              icon={<ViewQuiltIcon />}
-              href="/layout"
-              selected={!!matchPath("/layout/*", pathname)}
-            /> */}
             {(permissions.includes("role:read") ||
               permissions.includes("user:read") ||
               permissions.includes("permission:read")) && (
               <>
                 <DashboardSidebarHeaderItem>Admin</DashboardSidebarHeaderItem>
-
                 <DashboardSidebarPageItem
                   id="administration"
                   title="Administration"
                   icon={<AdminPanelSettingsIcon />}
-                  selected={!!matchPath("/admin/*", pathname)}
-                  defaultExpanded={!!matchPath("/admin/", pathname)}
+                  selected={
+                    !!matchPath(
+                      { path: `${BASE_URL}${DASHBOARD_URL}admin/*` },
+                      pathname,
+                    )
+                  }
+                  defaultExpanded={
+                    !!matchPath(
+                      { path: `${BASE_URL}${DASHBOARD_URL}admin/` },
+                      pathname,
+                    )
+                  }
                   expanded={expandedItemIds.includes("administration")}
                   nestedNavigation={
                     <List
@@ -211,8 +203,15 @@ export default function DashboardSidebar({
                           id="allRoles"
                           title="Roles"
                           icon={<GroupsIcon />}
-                          href="/admin/roles"
-                          selected={!!matchPath("/admin/roles", pathname)}
+                          href={`${BASE_URL}${DASHBOARD_URL}admin/roles/`}
+                          selected={
+                            !!matchPath(
+                              {
+                                path: `${BASE_URL}${DASHBOARD_URL}admin/roles/`,
+                              },
+                              pathname,
+                            )
+                          }
                         />
                       )}
                       {permissions.includes("user:read") && (
@@ -220,8 +219,15 @@ export default function DashboardSidebar({
                           id="allUsers"
                           title="Users"
                           icon={<PeopleOutlineIcon />}
-                          href="/admin/users"
-                          selected={!!matchPath("/admin/users", pathname)}
+                          href={`${BASE_URL}${DASHBOARD_URL}admin/users/`}
+                          selected={
+                            !!matchPath(
+                              {
+                                path: `${BASE_URL}${DASHBOARD_URL}admin/users/`,
+                              },
+                              pathname,
+                            )
+                          }
                         />
                       )}
                       {permissions.includes("permission:read") && (
@@ -229,9 +235,14 @@ export default function DashboardSidebar({
                           id="allPermissions"
                           title="Permissions"
                           icon={<ReportGmailerrorredIcon />}
-                          href="/admin/permissions"
+                          href={`${BASE_URL}${DASHBOARD_URL}admin/permissions/`}
                           selected={
-                            !!matchPath("/admin/permissions/*", pathname)
+                            !!matchPath(
+                              {
+                                path: `${BASE_URL}${DASHBOARD_URL}admin/permissions/*`,
+                              },
+                              pathname,
+                            )
                           }
                         />
                       )}
@@ -242,18 +253,22 @@ export default function DashboardSidebar({
                 <DashboardSidebarDividerItem />
               </>
             )}
-            {permissions.includes("terminal:read") && (
+            {permissions.includes("sensors:read") && (
               <>
                 <DashboardSidebarHeaderItem>
-                  Management
+                  Monitoring
                 </DashboardSidebarHeaderItem>
                 <DashboardSidebarPageItem
-                  id="manage"
-                  title={"Management"}
-                  icon={<SettingsIcon />}
-                  selected={!!matchPath("/manage/*", pathname)}
-                  defaultExpanded={!!matchPath("/manage/", pathname)}
-                  expanded={expandedItemIds.includes("manage")}
+                  id="monitoring"
+                  title={"Monitoring"}
+                  icon={<MonitorIcon />}
+                  selected={
+                    !!matchPath(`${BASE_URL}${DASHBOARD_URL}manage/*`, pathname)
+                  }
+                  defaultExpanded={
+                    !!matchPath(`${BASE_URL}${DASHBOARD_URL}manage/`, pathname)
+                  }
+                  expanded={expandedItemIds.includes("monitoring")}
                   nestedNavigation={
                     <List
                       dense
@@ -264,75 +279,129 @@ export default function DashboardSidebar({
                         minWidth: 240,
                       }}
                     >
-                      <DashboardSidebarPageItem
-                        id={"terminal"}
-                        title={"Terminal"}
-                        icon={<TerminalIcon />}
-                        href={"/manage/terminal/"}
-                        selected={!!matchPath("/manage/terminal/", pathname)}
-                      />
-                      <DashboardSidebarPageItem
-                        id={"status"}
-                        title={"Status"}
-                        icon={<AutorenewIcon />}
-                        href={"/manage/status/"}
-                        selected={!!matchPath("/manage/status/", pathname)}
-                      />
+                      {permissions.includes("sensors:read") && (
+                        <>
+                          <DashboardSidebarPageItem
+                            id={"system"}
+                            title={"System"}
+                            icon={<ComputerIcon />}
+                            href={`${BASE_URL}${DASHBOARD_URL}manage/system/`}
+                            selected={
+                              !!matchPath(
+                                {
+                                  path: `${BASE_URL}${DASHBOARD_URL}manage/system/`,
+                                },
+                                pathname,
+                              ) ||
+                              !!matchPath(
+                                {
+                                  path: `${BASE_URL}${DASHBOARD_URL}manage/system/`,
+                                },
+                                pathname,
+                              )
+                            }
+                          />
+                          <DashboardSidebarPageItem
+                            id={"temperature"}
+                            title={"Temperature"}
+                            icon={<DeviceThermostatIcon />}
+                            href={`${BASE_URL}${DASHBOARD_URL}manage/temperature/`}
+                            selected={
+                              !!matchPath(
+                                {
+                                  path: `${BASE_URL}${DASHBOARD_URL}manage/temperature/`,
+                                },
+                                pathname,
+                              ) ||
+                              !!matchPath(
+                                {
+                                  path: `${BASE_URL}${DASHBOARD_URL}manage/temperature/`,
+                                },
+                                pathname,
+                              )
+                            }
+                          />
+                          <DashboardSidebarPageItem
+                            id={"memory"}
+                            title={"Memory"}
+                            icon={<MemoryIcon />}
+                            href={`${BASE_URL}${DASHBOARD_URL}manage/memory/`}
+                            selected={
+                              !!matchPath(
+                                {
+                                  path: `${BASE_URL}${DASHBOARD_URL}manage/memory/`,
+                                },
+                                pathname,
+                              ) ||
+                              !!matchPath(
+                                {
+                                  path: `${BASE_URL}${DASHBOARD_URL}manage/memory/`,
+                                },
+                                pathname,
+                              )
+                            }
+                          />
+                          <DashboardSidebarPageItem
+                            id={"cpu"}
+                            title={"CPU"}
+                            icon={<DeveloperBoardIcon />}
+                            href={`${BASE_URL}${DASHBOARD_URL}manage/cpu/`}
+                            selected={
+                              !!matchPath(
+                                {
+                                  path: `${BASE_URL}${DASHBOARD_URL}manage/cpu/`,
+                                },
+                                pathname,
+                              ) ||
+                              !!matchPath(
+                                {
+                                  path: `${BASE_URL}${DASHBOARD_URL}manage/cpu/`,
+                                },
+                                pathname,
+                              )
+                            }
+                          />
+                          <DashboardSidebarPageItem
+                            id={"disk"}
+                            title={"Disk"}
+                            icon={<StorageIcon />}
+                            href={`${BASE_URL}${DASHBOARD_URL}manage/disk/`}
+                            selected={
+                              !!matchPath(
+                                `${BASE_URL}${DASHBOARD_URL}manage/disk/`,
+                                pathname,
+                              )
+                            }
+                          />
+                        </>
+                      )}
                     </List>
                   }
-                />
+                ></DashboardSidebarPageItem>
                 <DashboardSidebarDividerItem />
               </>
             )}
-            {permissions.includes("sensors:read") && (
+            {permissions.includes("services:read") && (
               <>
-                {sensors && (
-                  <>
-                    <DashboardSidebarHeaderItem>
-                      Sensors
-                    </DashboardSidebarHeaderItem>
-                    <DashboardSidebarPageItem
-                      id="sensors"
-                      title={"Sensors (" + String(sensors.length) + ")"}
-                      icon={<SensorsIcon />}
-                      selected={!!matchPath("/sensors/*", pathname)}
-                      defaultExpanded={!!matchPath("/sensors/", pathname)}
-                      expanded={expandedItemIds.includes("sensors")}
-                      nestedNavigation={
-                        <List
-                          dense
-                          sx={{
-                            padding: 0,
-                            my: 1,
-                            pl: mini ? 0 : 1,
-                            minWidth: 240,
-                          }}
-                        >
-                          {sensors.map((sensor, idx) => (
-                            <DashboardSidebarPageItem
-                              key={sensor + String(idx)}
-                              id={sensor}
-                              title={sensor}
-                              icon={<SensorsIcon />}
-                              href={"/sensors/" + sensor}
-                              selected={
-                                !!matchPath("/sensors/" + sensor, pathname)
-                              }
-                            />
-                          ))}
-                        </List>
-                      }
-                    />
-                  </>
-                )}
-
-                {/* <DashboardSidebarPageItem
-                id="sensors"
-                title="Sensors"
-                icon={<SensorsIcon />}
-                href="/sensors"
-                selected={!!matchPath("/sensors", pathname)}
-              /> */}
+                <DashboardSidebarHeaderItem>
+                  Services
+                </DashboardSidebarHeaderItem>
+                <DashboardSidebarPageItem
+                  id="services"
+                  title="Services"
+                  icon={<MiscellaneousServicesIcon />}
+                  href={`${BASE_URL}${DASHBOARD_URL}services/`}
+                  selected={
+                    !!matchPath(
+                      `${BASE_URL}${DASHBOARD_URL}services/`,
+                      pathname,
+                    ) ||
+                    !!matchPath(
+                      `${BASE_URL}${DASHBOARD_URL}services/`,
+                      pathname,
+                    )
+                  }
+                />
                 <DashboardSidebarDividerItem />
               </>
             )}
@@ -342,24 +411,15 @@ export default function DashboardSidebar({
               icon={<ExitToAppIcon />}
               // href="/logout"
               onClick={() => {
-                AuthService.logoutApiV1AuthLogoutPost()
-                  .then(() => {
-                    dispatch(clearUser())
-                    //  window.location.href = "/logout";
-                  })
-                  .catch((error: unknown) => {
-                    console.error("Logout failed:", error)
-                    // Optionally, you can still clear the user and redirect even if the API call fails
-                    dispatch(clearUser())
-                    //  window.location.href = "/logout";
-                  })
-                // window.location.href = "/logout";
+                void (async () => {
+                  await logout()
+                })()
               }}
               selected={true}
             />
           </List>
         </Box>
-      </React.Fragment>
+      </>
     ),
     [
       mini,
@@ -367,14 +427,13 @@ export default function DashboardSidebar({
       isFullyExpanded,
       expandedItemIds,
       pathname,
-      dispatch,
+      logout,
       user,
       permissions,
-      sensors,
     ],
   )
 
-  const getDrawerSharedSx = React.useCallback(
+  const getDrawerSharedSx = useCallback(
     (isTemporary: boolean) => {
       const drawerWidth = mini ? MINI_DRAWER_WIDTH : DRAWER_WIDTH
 
@@ -396,7 +455,7 @@ export default function DashboardSidebar({
     [expanded, mini],
   )
 
-  const sidebarContextValue = React.useMemo(() => {
+  const sidebarContextValue = useMemo(() => {
     return {
       onPageItemClick: handlePageItemClick,
       mini,

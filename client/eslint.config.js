@@ -21,6 +21,7 @@ const eslintConfig = defineConfig(
       "**/.yarn/",
       "**/coverage/",
       "**/scripts/",
+      "src/api/", // generated API client (openapi-typescript-codegen)
     ],
   },
   {

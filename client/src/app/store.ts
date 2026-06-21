@@ -1,24 +1,24 @@
 import type { Action, ThunkAction } from "@reduxjs/toolkit"
 import { combineSlices, configureStore } from "@reduxjs/toolkit"
 import { setupListeners } from "@reduxjs/toolkit/query"
-import { counterSlice } from "../features/counter/counterSlice"
-import { quotesApiSlice } from "../features/quotes/quotesApiSlice"
-import { userSlice } from "../features/user/userSlice"
-import { usersApiSlice } from "../features/user/usersApiSlice"
-import { rolesApiSlice } from "../features/user/rolesApiSlice"
-import { permissionApiSlice } from "../features/user/permissionApiSlice"
-import { sensorsSlice } from "../features/sensors/sensorsSlice"
+import { userSlice } from "@/features/user/userSlice"
+import { usersApiSlice } from "@/features/user/usersApiSlice"
+import { rolesApiSlice } from "@/features/user/rolesApiSlice"
+import { permissionApiSlice } from "@/features/user/permissionApiSlice"
+import { sensorsSlice } from "@/features/sensors/sensorsSlice"
+import { servicesApiSlice } from "@/features/sensors/servicesApiSlice"
+import { systemApiSlice } from "@/features/sensors/systemApiSlice"
 
 // `combineSlices` automatically combines the reducers using
 // their `reducerPath`s, therefore we no longer need to call `combineReducers`.
 const rootReducer = combineSlices(
-  counterSlice,
-  quotesApiSlice,
   userSlice,
   usersApiSlice,
   rolesApiSlice,
   permissionApiSlice,
   sensorsSlice,
+  systemApiSlice,
+  servicesApiSlice,
 )
 // Infer the `RootState` type from the root reducer
 export type RootState = ReturnType<typeof rootReducer>
@@ -32,13 +32,17 @@ export const makeStore = (preloadedState?: Partial<RootState>) => {
     // and other useful features of `rtk-query`.
     middleware: getDefaultMiddleware => {
       return getDefaultMiddleware().concat(
-        quotesApiSlice.middleware,
         rolesApiSlice.middleware,
         permissionApiSlice.middleware,
         usersApiSlice.middleware,
+        systemApiSlice.middleware,
+        servicesApiSlice.middleware,
       )
     },
     preloadedState,
+    devTools: false,
+    duplicateMiddlewareCheck: false, // Disable duplicate middleware check for better performance
+    enhancers: undefined, // No enhancers for better performance
   })
   // configure listeners using the provided defaults
   // optional, but required for `refetchOnFocus`/`refetchOnReconnect` behaviors

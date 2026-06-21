@@ -1,24 +1,25 @@
-import * as React from "react"
-import { useTheme } from "@mui/material/styles"
-import useMediaQuery from "@mui/material/useMediaQuery"
 import Box from "@mui/material/Box"
+import { useTheme } from "@mui/material/styles"
 import Toolbar from "@mui/material/Toolbar"
-import DashboardHeader from "../../components/dashboard/header/DashboardHeader"
-import DashboardSidebar from "../../components/dashboard/sidebar/DashboardSidebar"
-import Loader from "../../components/ui/loader/Loader"
-// import logo from "../../logo.svg"
+import useMediaQuery from "@mui/material/useMediaQuery"
+import { lazy, Suspense, useCallback, useRef, useState } from "react"
 
-const DashboardRouter = React.lazy(
-  () => import("../../routers/DashboardRouter"),
+const Loader = lazy(() => import("@/components/ui/loader/Loader"))
+const DashboardHeader = lazy(
+  () => import("@/components/dashboard/header/DashboardHeader"),
 )
+const DashboardSidebar = lazy(
+  () => import("@/components/dashboard/sidebar/DashboardSidebar"),
+)
+const DashboardRouter = lazy(() => import("@/routers/DashboardRouter"))
 
 export default function DashboardLayout() {
   const theme = useTheme()
 
   const [isDesktopNavigationExpanded, setIsDesktopNavigationExpanded] =
-    React.useState(true)
+    useState(true)
   const [isMobileNavigationExpanded, setIsMobileNavigationExpanded] =
-    React.useState(false)
+    useState(false)
 
   const isOverMdViewport = useMediaQuery(theme.breakpoints.up("md"))
 
@@ -26,7 +27,7 @@ export default function DashboardLayout() {
     ? isDesktopNavigationExpanded
     : isMobileNavigationExpanded
 
-  const setIsNavigationExpanded = React.useCallback(
+  const setIsNavigationExpanded = useCallback(
     (newExpanded: boolean) => {
       if (isOverMdViewport) {
         setIsDesktopNavigationExpanded(newExpanded)
@@ -41,14 +42,14 @@ export default function DashboardLayout() {
     ],
   )
 
-  const handleToggleHeaderMenu = React.useCallback(
+  const handleToggleHeaderMenu = useCallback(
     (isExpanded: boolean) => {
       setIsNavigationExpanded(isExpanded)
     },
     [setIsNavigationExpanded],
   )
 
-  const layoutRef = React.useRef<HTMLDivElement>(null)
+  const layoutRef = useRef<HTMLDivElement>(null)
 
   return (
     <Box
@@ -61,26 +62,20 @@ export default function DashboardLayout() {
         width: "100%",
       }}
     >
-      <DashboardHeader
-        // logo={<Box component="img" src={LogoDark} alt="Logo" sx={{height: 32}} />}
-        // logo={
-        //   <img
-        //     // component={"img"}
-        //     src={logo}
-        //     alt="Logo"
-        //     width="100%"
-        //     height="32"
-        //   />
-        // }
-        title="WP100"
-        menuOpen={isNavigationExpanded}
-        onToggleMenu={handleToggleHeaderMenu}
-      />
-      <DashboardSidebar
-        expanded={isNavigationExpanded}
-        setExpanded={setIsNavigationExpanded}
-        container={layoutRef.current ?? undefined}
-      />
+      <Suspense>
+        <DashboardHeader
+          title="WP100"
+          menuOpen={isNavigationExpanded}
+          onToggleMenu={handleToggleHeaderMenu}
+        />
+      </Suspense>
+      <Suspense>
+        <DashboardSidebar
+          expanded={isNavigationExpanded}
+          setExpanded={setIsNavigationExpanded}
+          container={layoutRef.current ?? undefined}
+        />
+      </Suspense>
       <Box
         sx={{
           display: "flex",
@@ -97,11 +92,12 @@ export default function DashboardLayout() {
             flexDirection: "column",
             flex: 1,
             overflow: "auto",
+            // backgroundColor: theme.vars.palette.background.default,
           }}
         >
-          <React.Suspense fallback={<Loader />}>
+          <Suspense fallback={<Loader />}>
             <DashboardRouter />
-          </React.Suspense>
+          </Suspense>
         </Box>
       </Box>
     </Box>

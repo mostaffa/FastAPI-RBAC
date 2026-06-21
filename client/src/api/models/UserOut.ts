@@ -1,8 +1,10 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
+/* tslint:disable */
 /* eslint-disable */
-import type { UserRead } from "./UserRead"
+import type { UserRead } from './UserRead';
 export type UserOut = {
-  user: UserRead
-  permissions?: Array<string>
-}
+    user: UserRead;
+    permissions?: Array<string>;
+};
+

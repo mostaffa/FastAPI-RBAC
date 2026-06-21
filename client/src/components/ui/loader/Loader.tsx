@@ -1,30 +1,16 @@
-import CircularProgress from "@mui/material/CircularProgress"
-import Box from "@mui/material/Box"
-export type LoaderProps = {
-  size?: number
-  thickness?: number
-  color?:
-    | "primary"
-    | "secondary"
-    | "inherit"
-    | "success"
-    | "error"
-    | "info"
-    | "warning"
-}
-export default function Loader({
-  size = 40,
-  thickness = 3.6,
-  color = "primary",
-}: LoaderProps) {
-  return (
-    <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      height="100%"
-    >
-      <CircularProgress size={size} thickness={thickness} color={color} />
-    </Box>
-  )
-}
+import { Box, CircularProgress } from "@mui/material"
+import { memo } from "react"
+
+// Memoize the loader component to prevent unnecessary re-renders
+export const Loader = memo(() => (
+  <Box
+    display="flex"
+    justifyContent="center"
+    alignItems="center"
+    minHeight="100vh"
+  >
+    <CircularProgress />
+  </Box>
+))
+
+export default Loader

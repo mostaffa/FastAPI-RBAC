@@ -1,12 +1,31 @@
-# app/main.py
+"""FastAPI application entry point with Socket.IO, REST API, and lifecycle management."""
+
+from __future__ import annotations
+
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
+
 from app.api.v1.api import api_router
+from app.core.config import CORS_ORIGINS
+from app.db.session import shutdown_db
 from app.websockets.connection_manager import socket_app
-# from app.models.user import User, Role
-# import app.models
+
+
+# ---------------------------------------------------------------------------
+# Lifespan — dispose the DB connection pool on shutdown.
+# ---------------------------------------------------------------------------
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    shutdown_db()
+
+
+# ---------------------------------------------------------------------------
+# Application factory
+# ---------------------------------------------------------------------------
 
 app = FastAPI(
     title="RPi IoT Gateway",
@@ -14,31 +33,31 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json"
+    openapi_url="/api/openapi.json",
+    lifespan=lifespan,
 )
 
-# 1. Setup CORS so your React app (usually on port 5173) can talk to your API
+# ---------------------------------------------------------------------------
+# CORS middleware — restrict to known origins in production
+# ---------------------------------------------------------------------------
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*", "https://nest.mostafaothman.com"],  # For production, replace with specific IP of your Pi
+    allow_origins=CORS_ORIGINS if CORS_ORIGINS else [
+        "http://rbac.localhost",
+        "https://nest.mostafaothman.com",
+        "https://ubuntu26:4000",
+        "http://ubuntu26:3000",
+        "http://localhost:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 2. Include REST API routes
+# ---------------------------------------------------------------------------
+# Mount routes
+# ---------------------------------------------------------------------------
+
 app.include_router(api_router, prefix="/api/v1")
-
-# 3. Mount Socket.IO
 app.mount("/ws", socket_app)
-
-# 4. Mount static files (React assets)
-app.mount("/assets", StaticFiles(directory="app/static/assets"), name="assets")
-
-@app.get("/{path_param:path}")
-async def serve_react(path_param: str):
-    """
-    Serve the React app for all unmatched routes (SPA catch-all)
-    React Router will handle the routing on the client side
-    """
-    return FileResponse("app/static/index.html")

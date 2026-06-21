@@ -1,39 +1,39 @@
-import { useEffect } from "react"
-import { useAppSelector } from "../../../app/hooks"
-import { selectUser } from "../../../features/user/userSlice"
-import Container from "@mui/material/Container"
-import Paper from "@mui/material/Paper"
-import Grid from "@mui/material/Grid"
-import Typography from "@mui/material/Typography"
-import TextField from "@mui/material/TextField"
-import FormControl from "@mui/material/FormControl"
+import type { UserOut } from "@/api"
+import { useAuth } from "@/hooks/useAuth/useAuth"
 import Button from "@mui/material/Button"
-import { useForm, Controller } from "react-hook-form"
-import type { UserRead } from "../../../api"
+import Container from "@mui/material/Container"
+import FormControl from "@mui/material/FormControl"
+import Grid from "@mui/material/Grid"
+import Paper from "@mui/material/Paper"
+import TextField from "@mui/material/TextField"
+import Typography from "@mui/material/Typography"
+import { useEffect } from "react"
+import { Controller, useForm } from "react-hook-form"
+
+type User = UserOut["user"]
 
 export const ProfileSettings = () => {
-  // const dispatch = useAppDispatch();
-  const user = useAppSelector(selectUser)
+  const { user } = useAuth()
 
-  const { setValue, control } = useForm<UserRead>({
+  const { setValue, control } = useForm<User>({
     defaultValues: {
-      username: user?.username ?? "",
-      first_name: user?.first_name ?? "",
-      last_name: user?.last_name ?? "",
-      email: user?.email,
-      active: user?.active,
-      role: user?.role,
+      username: user?.user.username ?? "",
+      first_name: user?.user.first_name ?? "",
+      last_name: user?.user.last_name ?? "",
+      email: user?.user.email ?? "",
+      active: user?.user.active ?? false,
+      role: user?.user.role ?? null,
     },
   })
 
   useEffect(() => {
     if (user) {
-      setValue("username", user.username)
-      setValue("first_name", user.first_name ?? "")
-      setValue("last_name", user.last_name ?? "")
-      setValue("email", user.email)
-      setValue("active", user.active)
-      setValue("role", user.role)
+      setValue("username", user.user.username)
+      setValue("first_name", user.user.first_name ?? "")
+      setValue("last_name", user.user.last_name ?? "")
+      setValue("email", user.user.email)
+      setValue("active", user.user.active)
+      setValue("role", user.user.role ?? null)
     }
   }, [user, setValue])
 

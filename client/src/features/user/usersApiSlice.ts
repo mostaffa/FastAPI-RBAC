@@ -1,6 +1,6 @@
+import type { UserRead } from "@/api"
+import { UsersService } from "@/api"
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
-import { UsersService } from "../../api"
-import type { UserRead } from "../../api"
 
 export const usersApiSlice = createApi({
   reducerPath: "usersApi",
@@ -25,6 +25,7 @@ export const usersApiSlice = createApi({
           }
         }
       },
+      providesTags: ["Users"],
     }),
   }),
 })

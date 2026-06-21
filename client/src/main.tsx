@@ -1,7 +1,8 @@
+import { AuthProvider } from "@/hooks/useAuth/AuthProvider"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
-import { BrowserRouter } from "react-router"
 import { Provider } from "react-redux"
+import { BrowserRouter } from "react-router"
 import { App } from "./App"
 import { store } from "./app/store"
 import "./index.css"
@@ -15,7 +16,9 @@ if (container) {
     <StrictMode>
       <BrowserRouter>
         <Provider store={store}>
-          <App />
+          <AuthProvider>
+            <App />
+          </AuthProvider>
         </Provider>
       </BrowserRouter>
     </StrictMode>,

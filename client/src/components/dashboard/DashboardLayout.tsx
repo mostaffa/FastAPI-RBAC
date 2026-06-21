@@ -1,28 +1,23 @@
-import * as React from "react"
-import { useTheme } from "@mui/material/styles"
-import useMediaQuery from "@mui/material/useMediaQuery"
 import Box from "@mui/material/Box"
+import { useTheme } from "@mui/material/styles"
 import Toolbar from "@mui/material/Toolbar"
+import useMediaQuery from "@mui/material/useMediaQuery"
+import { useCallback, useRef, useState } from "react"
 import { Outlet } from "react-router"
 import DashboardHeader from "./header/DashboardHeader"
 import DashboardSidebar from "./sidebar/DashboardSidebar"
-// import logo from "../../logo.svg"
 
 export default function DashboardLayout() {
   const theme = useTheme()
-
   const [isDesktopNavigationExpanded, setIsDesktopNavigationExpanded] =
-    React.useState(true)
+    useState(true)
   const [isMobileNavigationExpanded, setIsMobileNavigationExpanded] =
-    React.useState(false)
-
+    useState(false)
   const isOverMdViewport = useMediaQuery(theme.breakpoints.up("md"))
-
   const isNavigationExpanded = isOverMdViewport
     ? isDesktopNavigationExpanded
     : isMobileNavigationExpanded
-
-  const setIsNavigationExpanded = React.useCallback(
+  const setIsNavigationExpanded = useCallback(
     (newExpanded: boolean) => {
       if (isOverMdViewport) {
         setIsDesktopNavigationExpanded(newExpanded)
@@ -37,14 +32,14 @@ export default function DashboardLayout() {
     ],
   )
 
-  const handleToggleHeaderMenu = React.useCallback(
+  const handleToggleHeaderMenu = useCallback(
     (isExpanded: boolean) => {
       setIsNavigationExpanded(isExpanded)
     },
     [setIsNavigationExpanded],
   )
 
-  const layoutRef = React.useRef<HTMLDivElement>(null)
+  const layoutRef = useRef<HTMLDivElement>(null)
 
   return (
     <Box
@@ -58,16 +53,6 @@ export default function DashboardLayout() {
       }}
     >
       <DashboardHeader
-        // logo={<Box component="img" src={LogoDark} alt="Logo" sx={{height: 32}} />}
-        // logo={
-        //   <img
-        //     // component={"img"}
-        //     src={logo}
-        //     // inheritViewBox
-        //     style={{ height: 32, width: "auto" }}
-        //     title="Header"
-        //   />
-        // }
         title=""
         menuOpen={isNavigationExpanded}
         onToggleMenu={handleToggleHeaderMenu}

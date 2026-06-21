@@ -1,10 +1,7 @@
-// import { useEffect } from 'react'
 import Container from "@mui/material/Container"
 import Grid from "@mui/material/Grid"
 import Paper from "@mui/material/Paper"
 import Typography from "@mui/material/Typography"
-// import useSocket from '../../../hooks/useSocket/useSocket'
-// import useNotifications from '../../../hooks/useNotifications/useNotifications'
 
 export default function Sensor() {
   return (

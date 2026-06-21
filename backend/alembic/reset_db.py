@@ -1,48 +1,51 @@
 #!/usr/bin/env python3
+"""Database reset, migration, and seeding script.
+
+Usage:
+    python alembic/reset_db.py [--no-seed] [--skip-cache]
+
+This script:
+1. Drops all tables (including alembic_version)
+2. Runs Alembic migrations to recreate the schema
+3. Seeds default permissions and superuser
+4. Optionally clears FastAPI caches
+"""
+
+from __future__ import annotations
+
 import argparse
 import importlib
 import os
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-from sqlmodel import SQLModel
-
 # Ensure the backend package is importable when running as a script.
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
+
 def ensure_models_imported() -> None:
+    """Import all models so Alembic can detect schema changes."""
     import app.models  # noqa: F401
-
-
-def get_engine():
-    from app.db.session import engine
-    return engine
-
-
-def load_env() -> None:
-    env_path = Path(__file__).resolve().parents[1] / ".env"
-    if env_path.exists():
-        load_dotenv(dotenv_path=env_path)
 
 
 def reset_database() -> None:
     """Drop all tables and Alembic version table to start fresh."""
     from sqlalchemy import text
-    
+
     ensure_models_imported()
-    engine = get_engine()
-    
+    from app.db.session import engine
+    from sqlmodel import SQLModel
+
     # Drop all application tables
     SQLModel.metadata.drop_all(engine)
-    
+
     # Also drop the alembic_version table so migrations run fresh
     with engine.connect() as conn:
         conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
         conn.commit()
-    
+
     print("Database reset complete.")
 
 
@@ -62,7 +65,8 @@ def verify_permissions_seeded() -> int:
     from sqlmodel import Session, select
     from app.models.permission import Permission
 
-    engine = get_engine()
+    from app.db.session import engine
+
     with Session(engine) as db:
         return len(db.exec(select(Permission)).all())
 
@@ -118,7 +122,7 @@ def parse_args() -> argparse.Namespace:
 def run_alembic_migrations() -> None:
     """Run Alembic migrations to create the schema."""
     import subprocess
-    
+
     print("Running Alembic migrations...")
     result = subprocess.run(
         ["python", "-m", "alembic", "upgrade", "head"],
@@ -126,21 +130,26 @@ def run_alembic_migrations() -> None:
         capture_output=False,  # Show output in real-time
         text=True,
     )
-    
+
     if result.returncode != 0:
         print("Failed to run Alembic migrations!")
         sys.exit(1)
-    
+
     print("Alembic migrations applied successfully.")
 
 
 def main() -> None:
     args = parse_args()
-    load_env()
+
+    # Load environment variables from project root .env
+    env_path = Path(__file__).resolve().parents[2] / ".env"
+    if env_path.exists():
+        from dotenv import load_dotenv
+        load_dotenv(dotenv_path=env_path)
 
     reset_database()
     run_alembic_migrations()
-    
+
     if not args.no_seed:
         seed_database()
         permission_count = verify_permissions_seeded()

@@ -1,28 +1,23 @@
-import * as React from "react"
-import { useAppDispatch } from "../../app/hooks"
-import { setUser } from "../../features/user/userSlice"
+import { FacebookIcon, GoogleIcon } from "@/components/signin/CustomIcons"
+import { useAuth } from "@/hooks/useAuth/useAuth"
+import AppTheme from "@/theme/AppTheme"
+import ColorModeSelect from "@/theme/ColorModeSelect"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
+import MuiCard from "@mui/material/Card"
 import Checkbox from "@mui/material/Checkbox"
 import CssBaseline from "@mui/material/CssBaseline"
-import FormControlLabel from "@mui/material/FormControlLabel"
 import Divider from "@mui/material/Divider"
+import FormControlLabel from "@mui/material/FormControlLabel"
 import Link from "@mui/material/Link"
-import { Link as reactLink } from "react-router"
+import Stack from "@mui/material/Stack"
+import { styled } from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import Typography from "@mui/material/Typography"
-import Stack from "@mui/material/Stack"
-import MuiCard from "@mui/material/Card"
-import { styled } from "@mui/material/styles"
-import AppTheme from "../../theme/AppTheme"
-import ColorModeSelect from "../../theme/ColorModeSelect"
-import {
-  GoogleIcon,
-  FacebookIcon,
-  SitemarkIcon,
-} from "../../components/signin/CustomIcons"
-import { useForm, Controller } from "react-hook-form"
-import { AuthService } from "../../api"
+import * as React from "react"
+import { useEffect } from "react"
+import { Controller, useForm } from "react-hook-form"
+import { Link as reactLink, useNavigate } from "react-router"
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -35,11 +30,9 @@ const Card = styled(MuiCard)(({ theme }) => ({
   [theme.breakpoints.up("sm")]: {
     maxWidth: "450px",
   },
-  boxShadow:
-    "hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px",
+  boxShadow: theme.shadows[1],
   ...theme.applyStyles("dark", {
-    boxShadow:
-      "hsla(220, 30%, 5%, 0.5) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.08) 0px 15px 35px -5px",
+    boxShadow: theme.shadows[1],
   }),
 }))
 
@@ -56,19 +49,17 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
     position: "absolute",
     zIndex: -1,
     inset: 0,
-    backgroundImage:
-      "radial-gradient(ellipse at 50% 50%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))",
+    backgroundImage: `radial-gradient(ellipse at 50% 50%, rgba(${theme.vars.palette.primary.mainChannel} / 0.14), ${theme.vars.palette.background.default})`,
     backgroundRepeat: "no-repeat",
     ...theme.applyStyles("dark", {
-      backgroundImage:
-        "radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))",
+      backgroundImage: `radial-gradient(ellipse at 50% 50%, rgba(${theme.vars.palette.primary.mainChannel} / 0.24), ${theme.vars.palette.background.default})`,
     }),
   },
 }))
 
 export default function SignIn(props: { disableCustomTheme?: boolean }) {
-  const dispatch = useAppDispatch()
-
+  const { login, user } = useAuth()
+  const navigate = useNavigate()
   const { getValues, control } = useForm({
     defaultValues: {
       username: "",
@@ -79,20 +70,20 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
   const handleSubmit = React.useCallback(async () => {
     const { username, password } = getValues()
     try {
-      const token = await AuthService.loginApiV1AuthLoginPost({
-        formData: {
-          username,
-          password,
-        },
-      })
-      //set user in redux store
-      dispatch(setUser(token.user))
-      // window.location.reload();
+      await login(username, password)
     } catch (error: unknown) {
       alert("Login failed. Please check your credentials and try again.")
       console.error("Login error:", error)
     }
-  }, [getValues, dispatch])
+  }, [getValues, login])
+
+  useEffect(() => {
+    if (user) {
+      void (async () => {
+        await navigate("/dashboard")
+      })()
+    }
+  }, [user, navigate])
 
   return (
     <AppTheme {...props}>
@@ -102,7 +93,6 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
           sx={{ position: "fixed", top: "1rem", right: "1rem" }}
         />
         <Card variant="outlined">
-          <SitemarkIcon />
           <Typography
             component="h1"
             variant="h4"
@@ -138,7 +128,7 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
                   autoFocus
                   required
                   fullWidth
-                  variant="outlined"
+                  variant="standard"
                 />
               )}
             />
@@ -155,7 +145,7 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
                   autoComplete="current-password"
                   required
                   fullWidth
-                  variant="outlined"
+                  variant="standard"
                 />
               )}
             />

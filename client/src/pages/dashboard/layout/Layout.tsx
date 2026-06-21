@@ -1,8 +1,8 @@
 // Settings Page
 import Container from "@mui/material/Container"
-import Typography from "@mui/material/Typography"
-import Paper from "@mui/material/Paper"
 import Grid from "@mui/material/Grid"
+import Paper from "@mui/material/Paper"
+import Typography from "@mui/material/Typography"
 
 export default function Layout() {
   return (

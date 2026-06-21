@@ -1,15 +1,15 @@
-import * as React from "react"
-import PropTypes from "prop-types"
+import CloseIcon from "@mui/icons-material/Close"
 import Button from "@mui/material/Button"
 import Dialog from "@mui/material/Dialog"
 import DialogActions from "@mui/material/DialogActions"
 import DialogContent from "@mui/material/DialogContent"
 import DialogTitle from "@mui/material/DialogTitle"
-import TextField from "@mui/material/TextField"
+import IconButton from "@mui/material/IconButton"
 import type { SlideProps } from "@mui/material/Slide"
 import Slide from "@mui/material/Slide"
-import CloseIcon from "@mui/icons-material/Close"
-import IconButton from "@mui/material/IconButton"
+import TextField from "@mui/material/TextField"
+import PropTypes from "prop-types"
+import { forwardRef, useState } from "react"
 
 type DialogTransitionDirection = "up" | "down" | "left" | "right"
 type DialogWidth = "xs" | "sm" | "md" | "lg" | "xl"
@@ -48,21 +48,21 @@ type DialogProps<TPayload, TResult> = {
   onClose: (result: TResult) => void | Promise<void>
 }
 
-const TransitionDown = React.forwardRef(function Transition(
+const TransitionDown = forwardRef(function Transition(
   props: SlideProps,
   ref: React.Ref<unknown>,
 ) {
   return <Slide direction="down" timeout={{ exit: 100 }} ref={ref} {...props} />
 })
 
-const TransitionUp = React.forwardRef(function Transition(
+const TransitionUp = forwardRef(function Transition(
   props: SlideProps,
   ref: React.Ref<unknown>,
 ) {
   return <Slide direction="up" timeout={{ exit: 100 }} ref={ref} {...props} />
 })
 
-const TransitionLeft = React.forwardRef(function Transition(
+const TransitionLeft = forwardRef(function Transition(
   props: SlideProps,
   ref: React.Ref<unknown>,
 ) {
@@ -76,7 +76,7 @@ const TransitionLeft = React.forwardRef(function Transition(
   )
 })
 
-const TransitionRight = React.forwardRef(function Transition(
+const TransitionRight = forwardRef(function Transition(
   props: SlideProps,
   ref: React.Ref<unknown>,
 ) {
@@ -91,7 +91,7 @@ const TransitionRight = React.forwardRef(function Transition(
 })
 
 function useDialogLoadingButton(onClose: () => void | Promise<void>) {
-  const [loading, setLoading] = React.useState(false)
+  const [loading, setLoading] = useState(false)
   const handleClick = () => {
     void (async () => {
       try {
@@ -353,10 +353,10 @@ export function PromptDialog({
   payload,
   onClose,
 }: DialogProps<PromptDialogPayload, string | null>) {
-  const [input, setInput] = React.useState("")
+  const [input, setInput] = useState("")
   const cancelButtonProps = useDialogLoadingButton(() => onClose(null))
 
-  const [loading, setLoading] = React.useState(false)
+  const [loading, setLoading] = useState(false)
   const name = "input"
   const handleSubmit: React.SubmitEventHandler<HTMLDivElement> = event => {
     event.preventDefault()

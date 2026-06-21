@@ -1,277 +1,47 @@
-import os
-import signal
-from collections import defaultdict
-from collections.abc import Awaitable, Callable
-from typing import Any, DefaultDict, cast
-import socketio  # pyright: ignore[reportMissingTypeStubs]
-from fastapi import WebSocket
-from http.cookies import SimpleCookie
-from app.db.session import get_session
-from app.core.security import get_current_user_from_token, extract_bearer_from_cookie_value
-from sqlmodel import Session, select
-from app.models.user import User
-from app.models.permission import Permission, RolePermission
-from app.services.sensor import sensor_service
-from app.services.sys_cmd import TerminalService
+"""WebSocket connection registration and disconnect cleanup.
 
+Registers all Socket.IO event handlers (auth, sensors, services) and the
+disconnect cleanup. ``emit`` / ``sio`` / ``socket_app`` are re-exported here
+for the REST endpoints and the ASGI mount in ``main``.
+"""
 
-terminal_manager = TerminalService()
-terminal_sessions: dict[str, TerminalService] = {}
-# sensorService = SensorService()
+from __future__ import annotations
 
-sio = socketio.AsyncServer(
-    async_mode="asgi",
-    cors_allowed_origins="*",
-    logger=False,
-    )
-socket_app = socketio.ASGIApp(sio, socketio_path="/ws")
-sio_any: Any = sio
-socket_event = sio_any.event
-socket_disconnect_fn = cast(Callable[[str], Awaitable[None]], sio_any.disconnect)
-socket_save_session_fn = cast(
-    Callable[[str, dict[str, Any]], Awaitable[None]],
-    sio_any.save_session,
+from app.websockets import state
+from app.websockets.auth import register_connection_handlers
+from app.websockets.sensor_handlers import cleanup_sensor_subscriptions, register_sensor_handlers
+from app.websockets.services_handlers import (
+    cleanup_services_subscriptions,
+    register_services_handlers,
 )
-socket_enter_room_fn = cast(
-    Callable[[str, str], Awaitable[None]],
-    sio_any.enter_room,
-)
+from app.websockets.socket_server import emit, sio, socket_app
 
-_user_sids = cast(DefaultDict[int, set[str]], defaultdict(set))
-_sid_user: dict[str, int] = {}
+__all__ = ["emit", "sio", "socket_app"]
 
-# connect event, if the user is authenticated, add them to a room based on their user ID or role
-@socket_event
-async def connect(sid: str, environ: dict[str, Any]):
-    print(f"\u001b[32mSocket Connection attempt: {sid}\u001b[0m")
-    token_cookie = None
-    headers = environ.get("asgi.scope", {}).get("headers", [])
-    for k, v in headers:
-        if k == b'cookie':
-            c = SimpleCookie()
-            try:
-                c.load(v.decode('utf-8'))
-            except Exception:
-                break
-            if 'access_token' in c:
-                token_cookie = c['access_token'].value
-            break
 
-    # reject connection if no token cookie
-    if not token_cookie:
-        print(f"\u001b[31mConnection rejected (no token cookie): {sid}\u001b[0m")
-        await socket_disconnect(sid)
-        return False
-    # get user info from token (you would implement this function to decode the JWT and fetch user info from DB)
-    db = next(get_session())
-    user_info = get_current_user_from_token(
-        extract_bearer_from_cookie_value(token_cookie),
-        db,
-    )
-    if not user_info:
-        print(f"\u001b[31mConnection rejected (invalid token): {sid}\u001b[0m")
-        await socket_disconnect(sid)
-        return False
-    user_id = user_info.id
-    if user_id is None:
-        print(f"\u001b[31mConnection rejected (user id missing): {sid}\u001b[0m")
-        await socket_disconnect(sid)
-        return False
-    
-    print(user_info)
-    # if user is valid, you can join them to a room based on their user ID or role
-    await socket_save_session(sid, {"user_id": user_id})
-    # join the user to his own room, his role room
-    await socket_enter_room(sid, f"user_{user_id}")
-    await socket_enter_room(sid, f"role_{user_info.role_id}")
-    _user_sids[user_id].add(sid)
-    _sid_user[sid] = user_id
-    print(f"\u001b[32mSocket Connected: {sid} (User ID: {user_id})\u001b[0m")
-    return True
+# ---------------------------------------------------------------------------
+# Register all event handlers (auth, sensors, services)
+# ---------------------------------------------------------------------------
 
-@socket_event
-async def sensor_list(sid: str, message: dict[str, Any]):
-    print(f"\u001b[32mSensor Message Request Incomming: {sid}\u001b[0m")
-    print(message)
-    user_id = _sid_user[sid]
-    db = next(get_session())
-    user = db.exec(
-        select(User).where(User.id == user_id)
-    ).first()
-    print(user)
-    sensor_read_perm = db.exec(
-        select(Permission).join(RolePermission).where(RolePermission.role_id == user.role_id).where(Permission.name == "sensors:read")
-    ).all()
-    if sensor_read_perm:
-        print("User Has Sensor Read Permission")
-        data = await sensor_service.get_sensor_list()
-        print(data)
-        await emit(event="msg", data={
-            "type": "sensors",
-            "payload": data
-        })
-    else:
-        print("User Dosent Has Sensor Read Permission")
-        await emit(event="error", data={
-            "code": 403,
-            "message": "You dont have permission to read Sensors"
-        })
+register_connection_handlers(sio.event)
+register_sensor_handlers(sio.event)
+register_services_handlers(sio.event)
+
+
+# ---------------------------------------------------------------------------
+# Disconnect handler — cleanup subscriptions and user state
+# ---------------------------------------------------------------------------
 
 @sio.event
-async def disconnect(sid: str):
+async def disconnect(sid: str) -> None:
+    """Handle client disconnection — cleanup all resources."""
+    await cleanup_sensor_subscriptions(sid)
+    await cleanup_services_subscriptions(sid)
 
-    terminal = terminal_sessions.pop(sid, None)
-
-    if terminal and terminal.pid:
-        try:
-            os.kill(terminal.pid, signal.SIGKILL)
-        except:
-            pass
-
-    user_id = _sid_user.pop(sid, None)
+    user_id = state.sid_user.pop(sid, None)
     if user_id is None:
         return
 
-    _user_sids[user_id].discard(sid)
-    if not _user_sids[user_id]:
-        _user_sids.pop(user_id, None)
-
-# @socket_event
-# async def get_services(sid: str, message: dict[str, Any]):
-#     user_id = _sid_user[sid]
-#     db = next(get_session())
-#     user = db.exec(
-#         select(User).where(User.id == user_id)
-#     ).first()
-#     service_read_permission = db.exec(
-#         select(Permission).join(RolePermission).where(RolePermission.role_id == user.role_id).where(Permission.name == "service:read")
-#     ).all()
-#     print(service_read_permission)
-#     if service_read_permission:
-#         async for line in system_manager.stream_command("ping", ["-c", "4", "8.8.8.8"]):
-#             await emit(event="notification", data={
-#                 "type": "success",
-#                 "code": 200,
-#                 "message": line
-#             })
-#     else:
-        # await emit(event="notification", data={
-        #     "type": "error",
-        #     "code": 403,
-        #     "message": "You dont have permission to read Sensors"
-        # })
-
-
-@socket_event
-async def start_terminal(sid: str, message: dict):
-    terminal = TerminalService()
-    terminal_sessions[sid] = terminal
-    print(f"Total Terminals: {len(terminal_sessions)}")
-
-    async def send_to_react(data):
-        await sio.emit("terminal_data", data, room=sid)
-
-    await terminal.start_shell(send_to_react)
-    await emit(event="terminal_pid", data=terminal.pid, room=sid)
-
-@socket_event
-async def stop_terminal(sid: str, message):
-    terminal = terminal_sessions.pop(sid, None)
-    print(f"############## Killing Terminal Request {message} ===> {terminal.pid}")
-    if message and message != "null":
-        try:
-            os.kill(int(message), signal.SIGKILL)
-            await emit(event="terminal_stopped", data=int(message))
-        except Exception as e:
-            await emit(event="notification", data={
-                "type": "error",
-                "code": 200,
-                "message": f"Error Killing Terminal PID: {message} was killd successfuly{str(e)}"
-            })
-    # if terminal :
-    #     try:
-    #         os.kill(terminal.pid, signal.SIGKILL)
-    #         print("############## Killing Terminal")
-    #         await emit(event="notification", data={
-    #             "type": "success",
-    #             "code": 200,
-    #             "message": f"Terminal PID: {terminal.pid} was killd successfuly"
-    #         })
-    #     except:
-    #         pass
-    # else:
-    #     await emit(event="notification", data={
-    #         "type": "success",
-    #         "code": 200,
-    #         "message": f"Terminal was Not Found killd successfuly"
-    #     }, room=sid)
-
-@socket_event
-async def terminal_input(sid: str, message: dict):
-    terminal = terminal_sessions.get(sid)
-    if not terminal:
-        return
-
-    user_input = message.get("input", "")
-    await terminal.write_input(user_input)
-
-@socket_event
-async def terminal_resize(sid: str, message: dict):
-    terminal = terminal_sessions.get(sid)
-    if not terminal:
-        return
-
-    terminal.resize(message["rows"], message["cols"])
-
-@socket_event
-async def realtime(sid: str, message: dict):
-    await sensor_service.start_monitoring(sio)
-
-async def broadcast(event: str, data: dict[str, Any]) -> None:
-    await emit(event, data)
-
-
-async def emit(event: str, data: dict[str, Any], room: str | list[str] | None = None) -> None:
-    await cast(Any, sio).emit(event, data, room=room)
-
-
-async def socket_disconnect(sid: str) -> None:
-    print("##########################################################")
-    await socket_disconnect_fn(sid)
-
-
-async def socket_save_session(sid: str, session: dict[str, Any]) -> None:
-    await socket_save_session_fn(sid, session)
-
-
-async def socket_enter_room(sid: str, room: str) -> None:
-    await socket_enter_room_fn(sid, room)
-
-
-async def disconnect_user(user_id: int) -> None:
-    sids = list(_user_sids.get(user_id, []))
-    for sid in sids:
-        await socket_disconnect(sid)
-
-
-class ConnectionManager:
-    """Simple manager for FastAPI WebSocket connections."""
-    
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-    
-    async def disconnect(self, websocket: WebSocket):
-        pass
-
-@sio.on("disconnect")
-async def handle_disconnect(sid: str):
-    # This is CRITICAL on Termux to prevent your phone 
-    # from heating up with 100 hidden bash processes
-    if terminal_manager.pid:
-        try:
-            os.kill(terminal_manager.pid, signal.SIGKILL)
-            print(f"Terminated Termux shell for {sid}")
-        except:
-            pass
-
-manager = ConnectionManager()
+    state.user_sids[user_id].discard(sid)
+    if not state.user_sids[user_id]:
+        state.user_sids.pop(user_id, None)

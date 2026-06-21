@@ -1,25 +1,20 @@
-import React, { useCallback } from "react"
+import type { UserRead } from "@/api"
+import { ApiError, UsersService } from "@/api"
+import { useAppSelector } from "@/app/hooks"
+import { useGetUsersQuery } from "@/features/user/usersApiSlice"
+import { selectPermissions, selectUser } from "@/features/user/userSlice"
+import { useDialogs } from "@/hooks/useDialogs/useDialogs"
+import useNotifications from "@/hooks/useNotifications/useNotifications"
+import DeleteIcon from "@mui/icons-material/Delete"
+import Button from "@mui/material/Button"
+import ButtonGroup from "@mui/material/ButtonGroup"
 import Container from "@mui/material/Container"
 import Grid from "@mui/material/Grid"
+import IconButton from "@mui/material/IconButton"
 import Paper from "@mui/material/Paper"
 import Typography from "@mui/material/Typography"
-import { useDialogs } from "../../../../hooks/useDialogs/useDialogs"
-import { useGetUsersQuery } from "../../../../features/user/usersApiSlice"
-import Button from "@mui/material/Button"
-import Loader from "../../../../components/ui/loader/Loader"
-import DeleteIcon from "@mui/icons-material/Delete"
-import IconButton from "@mui/material/IconButton"
-import useNotifications from "../../../../hooks/useNotifications/useNotifications"
-import { useAppSelector } from "../../../../app/hooks"
-import {
-  selectPermissions,
-  selectUser,
-} from "../../../../features/user/userSlice"
-import ButtonGroup from "@mui/material/ButtonGroup"
-import type { UserRead } from "../../../../api"
-import { UsersService, ApiError } from "../../../../api"
-
-const UserForm = React.lazy(() => import("./UserForm"))
+import { useCallback } from "react"
+import UserForm from "./UserForm"
 
 const Users = () => {
   const dialogs = useDialogs()
@@ -29,26 +24,16 @@ const Users = () => {
   const permissions = useAppSelector(selectPermissions)
 
   const handleCreateNewUser = useCallback(async () => {
-    await dialogs.contentDialog(
-      <React.Suspense fallback={<Loader />}>
-        <UserForm createNew />
-      </React.Suspense>,
-      {
-        title: "Create New User",
-      },
-    )
+    await dialogs.contentDialog(<UserForm createNew />, {
+      title: "Create New User",
+    })
   }, [dialogs])
 
   const handleEditUser = useCallback(
     async (user: UserRead) => {
-      await dialogs.contentDialog(
-        <React.Suspense fallback={<Loader />}>
-          <UserForm userId={user.id} />
-        </React.Suspense>,
-        {
-          title: `Edit ${user.username} User`,
-        },
-      )
+      await dialogs.contentDialog(<UserForm userId={user.id} />, {
+        title: `Edit ${user.username} User`,
+      })
     },
     [dialogs],
   )
@@ -157,7 +142,7 @@ const Users = () => {
             </Grid>
             {permissions?.includes("user:delete") && (
               <IconButton
-                disabled={u.role?.id === 1} // Disable delete button for superuser role
+                disabled={u.id === 1} // Disable delete button for superuser role
                 aria-label="delete"
                 color="error"
                 size="small"

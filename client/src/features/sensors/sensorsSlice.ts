@@ -1,5 +1,5 @@
+import { createAppSlice } from "@/app/createAppSlice"
 import type { PayloadAction } from "@reduxjs/toolkit"
-import { createAppSlice } from "../../app/createAppSlice"
 
 export type SensorsType = {
   sensors: [string] | null

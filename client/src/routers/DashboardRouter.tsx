@@ -1,119 +1,114 @@
-import React from "react"
-import { Routes, Route } from "react-router"
-import Loader from "../components/ui/loader/Loader"
-import { useAppSelector } from "../app/hooks"
-import { selectUser, selectPermissions } from "../features/user/userSlice"
+import { useAuth } from "@/hooks/useAuth/useAuth"
+import { lazy, Suspense } from "react"
+import { Route, Routes } from "react-router"
 
-const Layout = React.lazy(() => import("../pages/dashboard/layout/Layout"))
-const MainView = React.lazy(() => import("../pages/dashboard/main/MainView"))
-const Dialogs = React.lazy(
-  () => import("../pages/dashboard/notifications/Dialogs"),
-)
-const NotificationAlerts = React.lazy(
-  () => import("../pages/dashboard/notifications/NotificationAlerts"),
-)
-
-const Roles = React.lazy(() => import("../pages/dashboard/admin/roles/Roles"))
-const Users = React.lazy(() => import("../pages/dashboard/admin/users/Users"))
-const UserForm = React.lazy(
-  () => import("../pages/dashboard/admin/users/UserForm"),
-)
-const Sensors = React.lazy(() => import("../pages/dashboard/sensor/Sensor"))
-const Manage = React.lazy(() => import("../pages/dashboard/manage"))
-const Status = React.lazy(() => import("../pages/dashboard/manage/status"))
+const Loader = lazy(() => import("@/components/ui/loader/Loader"))
+const Roles = lazy(() => import("@/pages/dashboard/admin/roles/Roles"))
+const Users = lazy(() => import("@/pages/dashboard/admin/users/Users"))
+const UserForm = lazy(() => import("@/pages/dashboard/admin/users/UserForm"))
+const Sensors = lazy(() => import("@/pages/dashboard/sensor/Sensor"))
+const Temperature = lazy(() => import("@/pages/dashboard/monitoring"))
+const Memory = lazy(() => import("@/pages/dashboard/monitoring/Memory"))
+const Cpu = lazy(() => import("@/pages/dashboard/monitoring/Cpu"))
+const Disk = lazy(() => import("@/pages/dashboard/monitoring/Disk"))
+const Services = lazy(() => import("@/pages/dashboard/services/Services"))
+const SystemInfo = lazy(() => import("@/pages/dashboard/monitoring/SystemInfo"))
 
 export default function DashboardRouter() {
-  const user = useAppSelector(selectUser)
-  const permissions = useAppSelector(selectPermissions)
+  const { user, getPermissions } = useAuth()
+  const permissions = getPermissions
+
   return (
     <Routes>
       <Route
-        path="/me"
+        path={`/me`}
         element={
-          <React.Suspense fallback={<Loader />}>
+          <Suspense fallback={<Loader />}>
             <UserForm updateCurrentUser />
-          </React.Suspense>
+          </Suspense>
         }
       />
       <Route
-        path="/layout"
+        path={`/sensors`}
         element={
-          <React.Suspense fallback={<Loader />}>
-            <Layout />
-          </React.Suspense>
-        }
-      />
-      <Route
-        path="/sensors"
-        element={
-          <React.Suspense fallback={<Loader />}>
+          <Suspense fallback={<Loader />}>
             <Sensors />
-          </React.Suspense>
+          </Suspense>
         }
       />
-      <Route
-        path="/notifications/dialogs"
-        element={
-          <React.Suspense fallback={<Loader />}>
-            <Dialogs />
-          </React.Suspense>
-        }
-      />
-      <Route
-        path="/notifications/alerts"
-        element={
-          <React.Suspense fallback={<Loader />}>
-            <NotificationAlerts />
-          </React.Suspense>
-        }
-      />
-      <Route
-        path="/*"
-        element={
-          <React.Suspense fallback={<Loader />}>
-            <MainView />
-          </React.Suspense>
-        }
-      />
-      {permissions?.includes("role:read") || user?.role?.id === 1 ? (
+      {permissions?.includes("role:read") || user?.user.role?.id === 1 ? (
         <Route
-          path="/admin/roles"
+          path={`/admin/roles`}
           element={
-            <React.Suspense fallback={<Loader />}>
+            <Suspense fallback={<Loader />}>
               <Roles />
-            </React.Suspense>
+            </Suspense>
           }
         />
       ) : null}
-      {permissions?.includes("user:read") || user?.role?.id === 1 ? (
+      {permissions?.includes("user:read") || user?.user.role?.id === 1 ? (
         <Route
-          path="/admin/users"
+          path={`/admin/users`}
           element={
-            <React.Suspense fallback={<Loader />}>
+            <Suspense fallback={<Loader />}>
               <Users />
-            </React.Suspense>
+            </Suspense>
           }
         />
       ) : null}
-      {permissions?.includes("service:read") || user?.role?.id === 1 ? (
+      {permissions?.includes("sensors:read") || user?.user.role?.id === 1 ? (
         <>
+          <Route
+            path={`/manage/system`}
+            element={
+              <Suspense fallback={<Loader />}>
+                <SystemInfo />
+              </Suspense>
+            }
+          />
+          <Route
+            path={`/manage/temperature`}
+            element={
+              <Suspense fallback={<Loader />}>
+                <Temperature />
+              </Suspense>
+            }
+          />
+          <Route
+            path={`/manage/memory`}
+            element={
+              <Suspense fallback={<Loader />}>
+                <Memory />
+              </Suspense>
+            }
+          />
+          <Route
+            path={`/manage/cpu`}
+            element={
+              <Suspense fallback={<Loader />}>
+                <Cpu />
+              </Suspense>
+            }
+          />
+          <Route
+            path={`/manage/disk`}
+            element={
+              <Suspense fallback={<Loader />}>
+                <Disk />
+              </Suspense>
+            }
+          />
+        </>
+      ) : null}
+      {permissions?.includes("services:read") || user?.user.role?.id === 1 ? (
         <Route
-          path="/manage/*"
+          path={`/services`}
           element={
-            <React.Suspense fallback={<Loader />}>
-              <Manage />
-            </React.Suspense>
+            <Suspense fallback={<Loader />}>
+              <Services />
+            </Suspense>
           }
         />
-        <Route
-        path="/manage/status"
-        element={
-          <React.Suspense fallback={<Loader />}>
-            <Status />
-          </React.Suspense>
-        }
-      />
-      </>
       ) : null}
     </Routes>
   )

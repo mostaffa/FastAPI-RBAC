@@ -1,6 +1,6 @@
+import type { UserOut } from "@/api"
+import { createAppSlice } from "@/app/createAppSlice"
 import type { PayloadAction } from "@reduxjs/toolkit"
-import { createAppSlice } from "../../app/createAppSlice"
-import type { UserOut } from "../../api"
 
 type UserState = {
   user: UserOut | null

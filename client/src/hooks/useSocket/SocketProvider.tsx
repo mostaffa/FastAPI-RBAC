@@ -1,54 +1,40 @@
-import React, { useState, useEffect, useRef } from "react"
-import { io } from "socket.io-client"
-import { useAppSelector, useAppDispatch } from "../../app/hooks"
-import {
-  selectUser,
-  selectPermissions,
-  addPermission,
-  removePermission,
-  setUser,
-} from "../../features/user/userSlice"
-import { setSensors } from "../../features/sensors/sensorsSlice"
-import SocketContext from "./SocketContext"
+import type {
+  PermissionRead,
+  RoleRead,
+  ServicesSnapshot,
+  UserOut,
+  UserRead,
+} from "@/api"
+import { useAppDispatch } from "@/app/hooks"
+import { setSensors } from "@/features/sensors/sensorsSlice"
+import { rolesApiSlice } from "@/features/user/rolesApiSlice"
+import { usersApiSlice } from "@/features/user/usersApiSlice"
 import type { ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { Socket } from "socket.io-client"
-import type { UserRead, RoleRead, PermissionRead, UserOut } from "../../api"
-import { rolesApiSlice } from "../../features/user/rolesApiSlice"
-import { usersApiSlice } from "../../features/user/usersApiSlice"
+import { io } from "socket.io-client"
+import { useAuth } from "../useAuth/useAuth"
 import useNotifications from "../useNotifications/useNotifications"
+import SocketContext from "./SocketContext"
 
 type SocketProviderProps = {
   children: ReactNode
 }
 
-// export type SocketMessage = {
-//   type:
-//     | "notification"
-//     | "error"
-//     | "user_created"
-//     | "user_updated"
-//     | "user_deleted"
-//     | "role_created"
-//     | "role_updated"
-//     | "role_deleted"
-//     | "role_permission_added"
-//     | "role_permission_removed"
-//     | "sensors"
-//   payload:
-//     | UserRead
-//     | RoleRead
-//     | PermissionRead
-//     | string
-//     | number
-//     | { role_id: number }
-//     | { user_id: number }
-//     | { role: RoleRead; permission: PermissionRead }
-//     | { message: string }
-//     | Record<string, string>
-// }
-export type ServerNotification = {type: "error" | "info" | "success" | "warning"; code: number; message: string}
+export type ServerNotification = {
+  type: "error" | "info" | "success" | "warning"
+  code: number
+  message: string
+}
 export type SocketMessage =
-  | { type: "notification" ; payload: {type: "error" | "info" | "success" | "warning"; code: number; message: string} }
+  | {
+      type: "notification"
+      payload: {
+        type: "error" | "info" | "success" | "warning"
+        code: number
+        message: string
+      }
+    }
   | { type: "user_created" | "user_updated"; payload: { user: UserRead } }
   | { type: "user_deleted"; payload: { user_id: number } }
   | { type: "role_created" | "role_updated"; payload: RoleRead }
@@ -58,310 +44,320 @@ export type SocketMessage =
       payload: { role: RoleRead; permission: PermissionRead }
     }
   | { type: "sensors"; payload: Record<string, [string]> }
+  | { type: "services"; payload: ServicesSnapshot }
 
 export const SocketProvider = ({ children }: SocketProviderProps) => {
   const dispatch = useAppDispatch()
   const WS_PATH = (import.meta.env.VITE_WS_PATH as string | undefined) ?? "/ws"
-  //   const WS_URL = import.meta.env.VITE_WS_URL || window.location.origin;
-  const user = useAppSelector(selectUser)
-  const permissions = useAppSelector(selectPermissions)
+  const { user, getPermissions, addPerm, removePerm, setCurrentUser } =
+    useAuth()
+  const permissions = useMemo(() => getPermissions ?? [], [getPermissions])
   const socketRef = useRef<Socket | null>(null)
   const [status, setStatus] = useState("disconnected")
   const [message, setMessage] = useState<SocketMessage | null>(null)
-  const [serverNotification, setServerNotification] = useState<ServerNotification>()
-  const {show} = useNotifications()
+  const [serverNotification, setServerNotification] =
+    useState<ServerNotification>()
+  const { show } = useNotifications()
+
+  // Force a clean reconnect so the server re-joins us to the rooms that match
+  // our CURRENT role (used when the logged-in user's own role changes).
+  const reconnect = useCallback(() => {
+    const socket = socketRef.current
+    if (!socket) return
+    if (socket.connected) socket.disconnect()
+    socket.connect()
+  }, [])
+
+  // Pull list state from the server. Called on every (re)connect so updates
+  // that were emitted while this client was briefly disconnected are recovered
+  // — without this, a dropped socket silently misses role/user events.
+  const resync = useCallback(() => {
+    dispatch(rolesApiSlice.util.invalidateTags(["getRoles"]))
+    dispatch(usersApiSlice.util.invalidateTags(["Users"]))
+  }, [dispatch])
+
+  const handleSocketMessage = useCallback(
+    (message: SocketMessage) => {
+      if (!user) return
+      switch (message.type) {
+        case "role_created":
+          dispatch(
+            rolesApiSlice.util.updateQueryData("getRoles", undefined, draft => {
+              if (
+                typeof message.payload === "object" &&
+                "id" in message.payload
+              ) {
+                const newRole = message.payload
+                // Guard against duplicates: the actor also receives this event
+                // while its own mutation refetch may already have added the row.
+                if (!draft.some(role => role.id === newRole.id)) {
+                  draft.push(newRole)
+                }
+              }
+            }),
+          )
+          setMessage(null)
+          break
+        case "role_deleted":
+          dispatch(
+            rolesApiSlice.util.updateQueryData("getRoles", undefined, draft => {
+              const deletedRoleId = message.payload.role_id
+              const deleteIndex = draft.findIndex(
+                role => role.id === deletedRoleId,
+              )
+              if (deleteIndex !== -1) {
+                draft.splice(deleteIndex, 1)
+              }
+            }),
+          )
+          setMessage(null)
+          break
+        case "role_updated":
+          dispatch(
+            rolesApiSlice.util.updateQueryData("getRoles", undefined, draft => {
+              if (
+                typeof message.payload === "object" &&
+                "id" in message.payload
+              ) {
+                const updatedRole = message.payload
+                const index = draft.findIndex(
+                  role => role.id === updatedRole.id,
+                )
+                if (index !== -1) {
+                  draft[index] = updatedRole
+                }
+              }
+            }),
+          )
+          // NOTE: a role rename does not change room membership, so we must NOT
+          // reconnect here — doing so churns every watcher's socket.
+          setMessage(null)
+          break
+        case "role_permission_added": {
+          const permissionToAdd = message.payload.permission
+          dispatch(
+            rolesApiSlice.util.updateQueryData(
+              "getRolePermissions",
+              (message.payload as { role: RoleRead }).role.id,
+              draft => {
+                if (!draft.some(p => p.id === permissionToAdd.id)) {
+                  draft.push(permissionToAdd)
+                }
+                // add this permission to current user if it belongs to the user's role
+              },
+            ),
+          )
+          if (
+            user.user.role?.id ===
+            (message.payload as { role: RoleRead }).role.id
+          ) {
+            // dispatch(addPermission(permissionToAdd.name))
+            addPerm(permissionToAdd.name)
+          }
+          setMessage(null)
+          break
+        }
+        case "role_permission_removed": {
+          const permissionToRemove = message.payload.permission
+          dispatch(
+            rolesApiSlice.util.updateQueryData(
+              "getRolePermissions",
+              (message.payload as { role: RoleRead }).role.id,
+              draft => {
+                const index = draft.findIndex(
+                  p => p.id === permissionToRemove.id,
+                )
+                if (index !== -1) {
+                  draft.splice(index, 1)
+                }
+                // remove this permission from current user if it exists and belongs to the user's role
+              },
+            ),
+          )
+          if (
+            user.user.role?.id ===
+            (message.payload as { role: RoleRead }).role.id
+          ) {
+            removePerm(permissionToRemove.name)
+          }
+          setMessage(null)
+          break
+        }
+        case "user_created":
+          dispatch(
+            usersApiSlice.util.updateQueryData(
+              "getUsers",
+              { skip: 0, limit: 100 },
+              draft => {
+                if (
+                  typeof message.payload === "object" &&
+                  "user" in message.payload
+                ) {
+                  const newUser = message.payload.user
+                  if (!draft.some(u => u.id === newUser.id)) {
+                    draft.push(newUser)
+                  }
+                }
+              },
+            ),
+          )
+          setMessage(null)
+          break
+        case "user_updated":
+          dispatch(
+            usersApiSlice.util.updateQueryData(
+              "getUsers",
+              { skip: 0, limit: 100 },
+              draft => {
+                if (
+                  typeof message.payload === "object" &&
+                  "user" in message.payload
+                ) {
+                  const updatedUser = message.payload.user
+                  const index = draft.findIndex(u => u.id === updatedUser.id)
+                  if (index !== -1) {
+                    draft[index] = updatedUser
+                  }
+                }
+              },
+            ),
+          )
+          // if the updated user is the current user, we may need to update their permissions in the store as well
+          if (
+            typeof message.payload === "object" &&
+            "user" in message.payload &&
+            "permissions" in message.payload
+          ) {
+            const updatedUser = message.payload as UserOut
+            if (updatedUser.user.id === user.user.id) {
+              setCurrentUser(updatedUser)
+              // if the role changed, reconnect so the server re-joins us to the
+              // new role's room (otherwise we keep getting the OLD role's events).
+              if (updatedUser.user.role?.id !== user.user.role?.id) {
+                reconnect()
+              }
+            }
+          }
+          setMessage(null)
+          break
+        case "user_deleted":
+          dispatch(
+            usersApiSlice.util.updateQueryData(
+              "getUsers",
+              { skip: 0, limit: 100 },
+              draft => {
+                const deletedUserId = message.payload.user_id
+                const deleteIndex = draft.findIndex(u => u.id === deletedUserId)
+                if (deleteIndex !== -1) {
+                  draft.splice(deleteIndex, 1)
+                }
+              },
+            ),
+          )
+          setMessage(null)
+          break
+        case "sensors":
+          dispatch(setSensors(message.payload.sensors))
+          setMessage(null)
+          break
+        case "services":
+          setMessage(null)
+          break
+        default:
+          // to be handled by other components that consume the socket context
+          setMessage(message)
+          console.warn("Unhandled message type:", message)
+      }
+    },
+    [user, dispatch, addPerm, removePerm, setCurrentUser, reconnect],
+  )
+
+  // Keep the latest handler / permissions in refs so the socket can bind its
+  // listeners ONCE per connection instead of re-binding on every render.
+  const handlerRef = useRef(handleSocketMessage)
+  useEffect(() => {
+    handlerRef.current = handleSocketMessage
+  }, [handleSocketMessage])
+  const permissionsRef = useRef(permissions)
+  useEffect(() => {
+    permissionsRef.current = permissions
+  }, [permissions])
+
+  const userId = user?.user.id
 
   useEffect(() => {
-    socketRef.current ??= io({
+    if (!userId) {
+      if (socketRef.current) {
+        socketRef.current.disconnect()
+        socketRef.current = null
+        setStatus("disconnected")
+      }
+      return
+    }
+
+    const socket = io({
       withCredentials: true,
       autoConnect: true,
       path: WS_PATH,
       transports: ["websocket"],
     })
-    if (!user) {
-      if (socketRef.current.connected) {
-        socketRef.current.disconnect()
-      }
-      socketRef.current = null
-      // }
-      return
-    }
-    const socket = socketRef.current
+    socketRef.current = socket
+
     socket.on("connect", () => {
       setStatus("connected")
+      // Recover anything missed while we were (re)connecting.
+      resync()
+      if (permissionsRef.current.includes("sensors:read")) {
+        socket.emit("sensor_list", { list: "all" })
+      }
     })
     socket.on("disconnect", () => {
       setStatus("disconnected")
-      // console.log(`\u001b[31mSocket disconnected\u001b[0m`)
     })
     socket.on("reconnect_attempt", () => {
       setStatus("reconnecting")
-      // console.log(`\u001b[33mSocket reconnect_attempt\u001b[0m`);
     })
-    socket.on("msg", (message: SocketMessage) => {
-      setMessage(message)
-      console.log(
-        `\u001b[36mMessage received: ${JSON.stringify(message)}\u001b[0m`,
-      )
+    socket.on("msg", (msg: SocketMessage) => {
+      setMessage(msg)
+      handlerRef.current(msg)
+      console.log("\u001b[34m[Socket]\u001b[0m Received message:", msg)
     })
-
     socket.on("notification", (noti: ServerNotification) => {
       setServerNotification(noti)
     })
 
-    if (permissions?.includes("sensors:read")) {
-      socket.emit("sensor_list", { list: "all" })
-    }
-
     return () => {
+      // Always tear down THIS socket — drop its listeners and disconnect —
+      // regardless of whether it is currently connected. Guarding on
+      // `.connected` leaks the socket whenever cleanup runs mid-(re)connect
+      // (StrictMode's mount/unmount, an auth change, or a server restart while
+      // the socket is briefly down): the old socket keeps its listeners and its
+      // background reconnection loop, so a second socket gets created alongside
+      // it and every "msg" is then handled twice.
       socket.off("connect")
       socket.off("disconnect")
       socket.off("connect_error")
       socket.off("reconnect_attempt")
       socket.off("msg")
       socket.off("notification")
-      // socket?.disconnect();
-      // socketRef.current = null;
-      // console.log(`\u001b[31mSocket disconnected on cleanup\u001b[0m`);
-    }
-  }, [user, WS_PATH, permissions])
-
-  const reconnect = () => {
-    if (socketRef.current && !socketRef.current.connected) {
-      // disconnect first
-      socketRef.current.disconnect()
-      // then reconnect
-      socketRef.current.connect()
-    }
-  }
-
-  useEffect(() => {
-    if (user && socketRef.current) {
-      if (message) {
-        switch (message.type) {
-          case "role_created":
-            dispatch(
-              rolesApiSlice.util.updateQueryData(
-                "getRoles",
-                undefined,
-                draft => {
-                  if (
-                    typeof message.payload === "object" &&
-                    "id" in message.payload
-                  ) {
-                    draft.push(message.payload)
-                  }
-                },
-              ),
-            )
-            break
-          case "role_deleted":
-            dispatch(
-              rolesApiSlice.util.updateQueryData(
-                "getRoles",
-                undefined,
-                draft => {
-                  const deletedRoleId = (message.payload as { role_id: number })
-                    .role_id
-                  const deleteIndex = draft.findIndex(
-                    role => role.id === deletedRoleId,
-                  )
-                  if (deleteIndex !== -1) {
-                    draft.splice(deleteIndex, 1)
-                  }
-                },
-              ),
-            )
-            break
-          case "role_updated":
-            dispatch(
-              rolesApiSlice.util.updateQueryData(
-                "getRoles",
-                undefined,
-                draft => {
-                  if (
-                    typeof message.payload === "object" &&
-                    "id" in message.payload
-                  ) {
-                    const updatedRole = message.payload
-                    const index = draft.findIndex(
-                      role => role.id === updatedRole.id,
-                    )
-                    if (index !== -1) {
-                      draft[index] = updatedRole
-                    }
-                  }
-                },
-              ),
-            )
-            break
-          case "role_permission_added": {
-            const permissionToAdd = (
-              message.payload as { role: RoleRead; permission: PermissionRead }
-            ).permission
-            dispatch(
-              rolesApiSlice.util.updateQueryData(
-                "getRolePermissions",
-                (message.payload as { role: RoleRead }).role.id,
-                draft => {
-                  if (!draft.some(p => p.id === permissionToAdd.id)) {
-                    draft.push(permissionToAdd)
-                  }
-                  // add this permission to current user if it belongs to the user's role
-                },
-              ),
-            )
-            if (
-              user.role?.id === (message.payload as { role: RoleRead }).role.id
-            ) {
-              dispatch(addPermission(permissionToAdd.name))
-            }
-            break
-          }
-          case "role_permission_removed": {
-            const permissionToRemove = (
-              message.payload as { role: RoleRead; permission: PermissionRead }
-            ).permission
-            dispatch(
-              rolesApiSlice.util.updateQueryData(
-                "getRolePermissions",
-                (message.payload as { role: RoleRead }).role.id,
-                draft => {
-                  const index = draft.findIndex(
-                    p => p.id === permissionToRemove.id,
-                  )
-                  if (index !== -1) {
-                    draft.splice(index, 1)
-                  }
-                  // remove this permission from current user if it exists and belongs to the user's role
-                },
-              ),
-            )
-            if (
-              user.role?.id === (message.payload as { role: RoleRead }).role.id
-            ) {
-              dispatch(removePermission(permissionToRemove.name))
-            }
-            break
-          }
-          case "user_created":
-            dispatch(
-              usersApiSlice.util.updateQueryData(
-                "getUsers",
-                { skip: 0, limit: 100 },
-                draft => {
-                  if (
-                    typeof message.payload === "object" &&
-                    "user" in message.payload
-                  ) {
-                    draft.push((message.payload as { user: UserRead }).user)
-                  }
-                },
-              ),
-            )
-            break
-          case "user_updated":
-            dispatch(
-              usersApiSlice.util.updateQueryData(
-                "getUsers",
-                { skip: 0, limit: 100 },
-                draft => {
-                  if (
-                    typeof message.payload === "object" &&
-                    "user" in message.payload
-                  ) {
-                    const updatedUser = (message.payload as { user: UserRead })
-                      .user
-                    const index = draft.findIndex(u => u.id === updatedUser.id)
-                    if (index !== -1) {
-                      draft[index] = updatedUser
-                    }
-                  }
-                },
-              ),
-            )
-            // if the updated user is the current user, we may need to update their permissions in the store as well
-            if (
-              typeof message.payload === "object" &&
-              "user" in message.payload &&
-              "permissions" in message.payload
-            ) {
-              const updatedUser = message.payload as UserOut
-              if (updatedUser.user.id === user.id) {
-                dispatch(setUser(updatedUser))
-                // if the role was changed, the socket must disconnected and reconnected again to the new updated role
-                if (updatedUser.user.role?.id !== user.role?.id) {
-                  reconnect()
-                }
-              }
-            }
-            break
-          case "user_deleted":
-            dispatch(
-              usersApiSlice.util.updateQueryData(
-                "getUsers",
-                { skip: 0, limit: 100 },
-                draft => {
-                  const deletedUserId = (message.payload as { user_id: number })
-                    .user_id
-                  const deleteIndex = draft.findIndex(
-                    u => u.id === deletedUserId,
-                  )
-                  if (deleteIndex !== -1) {
-                    draft.splice(deleteIndex, 1)
-                  }
-                },
-              ),
-            )
-            break
-          case "sensors":
-            dispatch(setSensors(message.payload.sensors))
-            break
-          default:
-            console.warn("Unhandled message type:", message)
-        }
+      socket.disconnect()
+      // Only clear the shared ref if a newer effect run hasn't already replaced it.
+      if (socketRef.current === socket) {
+        socketRef.current = null
       }
-      // if (typeof message.payload === "object") {
-      //   if (
-      //     message.type === "role_permission_added" &&
-      //     "role" in message.payload &&
-      //     "permission" in message.payload
-      //   ) {
-      //     if (user.role?.id === message.payload.role.id) {
-      //       const payload = message.payload as {
-      //         role: RoleRead
-      //         permission: PermissionRead
-      //       }
-      //       dispatch(addPermission(payload.permission.name))
-      //     }
-      //   } else if (
-      //     message.type === "role_permission_removed" &&
-      //     "role" in message.payload &&
-      //     "permission" in message.payload
-      //   ) {
-      //     if (user.role?.id === message.payload.role.id) {
-      //       const payload = message.payload as {
-      //         role: RoleRead
-      //         permission: PermissionRead
-      //       }
-      //       dispatch(removePermission(payload.permission.name))
-      //     }
-      //   }
-      // }
     }
-  }, [user, message, dispatch])
+  }, [userId, WS_PATH, resync])
 
   useEffect(() => {
-    if(serverNotification){
-      // console.log(serverNotification)
+    if (serverNotification) {
       show(serverNotification.message, {
         severity: serverNotification.type,
-        autoHideDuration: serverNotification.type === "error"? 10000 : 3000
+        autoHideDuration: serverNotification.type === "error" ? 10000 : 3000,
       })
     }
-  }, [serverNotification])
+  }, [serverNotification, show])
 
-  const contextValue = React.useMemo(
+  const contextValue = useMemo(
     () => ({
       socket: socketRef.current,
       status,
@@ -369,7 +365,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       setMessage,
       reconnect,
     }),
-    [status, message],
+    [status, message, reconnect],
   )
 
   return (

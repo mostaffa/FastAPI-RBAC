@@ -7,7 +7,7 @@ from app.db.session import engine
 from app.core.security import hash_password
 
 # Load environment variables from .env file
-env_path = os.path.join(os.path.dirname(__file__), "../../.env")
+env_path = os.path.join(os.path.dirname(__file__), "../../../.env")
 load_dotenv(dotenv_path=env_path)
 
 PERMISSIONS = [
@@ -26,6 +26,10 @@ PERMISSIONS = [
     "permission:read",
     "permission:update",
     "permission:delete",
+    "sensors:read",
+    "terminal:read",
+    "services:read",
+    "services:update",
 ]
 
 def seed_permissions():
@@ -80,7 +84,6 @@ def seed_default_superuser():
     default_username = os.getenv("DEFAULT_USER", "superuser")
     default_password = os.getenv("DEFAULT_PASSWORD", "superuser1234")
     default_email = os.getenv("ADMIN_EMAIL", "admin@example.com")
-    print(f"\u001b[32mSeeding default superuser: {default_username} / {default_password}\u001b[0m")
     with Session(engine) as db:
         existing_user = db.exec(
             select(User).where(User.username == default_username)

@@ -1,5 +1,5 @@
-import * as React from "react"
 import useEventCallback from "@mui/utils/useEventCallback"
+import { useId, useMemo, useRef, useState } from "react"
 import DialogsContext from "./DialogsContext"
 import type {
   DialogComponent,
@@ -29,10 +29,10 @@ export type DialogProviderProps = {
 export default function DialogsProvider(props: DialogProviderProps) {
   const { children, unmountAfter = 1000 } = props
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [stack, setStack] = React.useState<DialogStackEntry<any, any>[]>([])
-  const keyPrefix = React.useId()
-  const nextId = React.useRef(0)
-  const dialogMetadata = React.useRef(
+  const [stack, setStack] = useState<DialogStackEntry<any, any>[]>([])
+  const keyPrefix = useId()
+  const nextId = useRef(0)
+  const dialogMetadata = useRef(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     new WeakMap<Promise<any>, DialogStackEntry<any, any>>(),
   )
@@ -105,7 +105,7 @@ export default function DialogsProvider(props: DialogProviderProps) {
     return dialog
   })
 
-  const contextValue = React.useMemo(
+  const contextValue = useMemo(
     () => ({ open: requestDialog, close: closeDialog }),
     [requestDialog, closeDialog],
   )

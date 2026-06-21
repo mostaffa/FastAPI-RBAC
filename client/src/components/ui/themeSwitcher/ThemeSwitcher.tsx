@@ -1,10 +1,10 @@
-import * as React from "react"
-import { useTheme, useColorScheme } from "@mui/material/styles"
-import useMediaQuery from "@mui/material/useMediaQuery"
-import IconButton from "@mui/material/IconButton"
-import Tooltip from "@mui/material/Tooltip"
 import DarkModeIcon from "@mui/icons-material/DarkMode"
 import LightModeIcon from "@mui/icons-material/LightMode"
+import IconButton from "@mui/material/IconButton"
+import { useColorScheme, useTheme } from "@mui/material/styles"
+import Tooltip from "@mui/material/Tooltip"
+import useMediaQuery from "@mui/material/useMediaQuery"
+import { useCallback } from "react"
 
 export default function ThemeSwitcher() {
   const theme = useTheme()
@@ -16,7 +16,7 @@ export default function ThemeSwitcher() {
 
   const paletteMode = !mode || mode === "system" ? preferredMode : mode
 
-  const toggleMode = React.useCallback(() => {
+  const toggleMode = useCallback(() => {
     setMode(paletteMode === "dark" ? "light" : "dark")
   }, [setMode, paletteMode])
 
@@ -32,7 +32,7 @@ export default function ThemeSwitcher() {
           onClick={toggleMode}
         >
           {"getColorSchemeSelector" in theme ? (
-            <React.Fragment>
+            <>
               <LightModeIcon
                 sx={{
                   display: "inline",
@@ -57,7 +57,7 @@ export default function ThemeSwitcher() {
                   },
                 }}
               />
-            </React.Fragment>
+            </>
           ) : null}
         </IconButton>
       </div>
